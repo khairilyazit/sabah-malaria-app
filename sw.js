@@ -1,8 +1,8 @@
 /* =========================================================
-   SERVICE WORKER (v3): Offline Support for GitHub Pages
+   SERVICE WORKER (v4): Offline Support for GitHub Pages
    ========================================================= */
 
-const APP_CACHE = "sabah-malaria-app-v3";
+const APP_CACHE = "sabah-malaria-app-v4";
 const TILE_CACHE = "sabah-malaria-tiles-v1";
 
 const APP_FILES = [
