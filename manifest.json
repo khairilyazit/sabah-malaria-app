@@ -1,0 +1,9 @@
+{
+  "name": "Sabah Malaria Control - House Locator",
+  "short_name": "Sabah Malaria",
+  "description": "Offline-ready house locator for Malaria Control Program field teams in Sabah, Malaysia.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#1b4332"
+}
