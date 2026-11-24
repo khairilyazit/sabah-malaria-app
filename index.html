@@ -1118,4 +1118,526 @@
       document.getElementById(fieldId).addEventListener("input", () => {
         const total =
           (parseInt(document.getElementById("netSingle").value, 10) || 0) +
-          (parseInt(document
+          (parseInt(document.getElementById("netDouble").value, 10) || 0) +
+          (parseInt(document.getElementById("netFamily").value, 10) || 0);
+        if (total > 0) {
+          document.getElementById("netsGiven").checked = true;
+        }
+      });
+    });
+
+    function resetFormMode() {
+      document.getElementById("houseForm").reset();
+      document.getElementById("editRecordId").value = "";
+      document.getElementById("netSingle").value = 0;
+      document.getElementById("netDouble").value = 0;
+      document.getElementById("netFamily").value = 0;
+      document.getElementById("occupants").value = 0;
+      document.getElementById("formTitle").textContent = "Add / Pin a House";
+      document.getElementById("submitBtn").textContent = "Save House";
+      document.getElementById("cancelEditBtn").style.display = "none";
+    }
+
+    window.startEditHouse = function (recordId) {
+      const house = houses.find((h) => h.record_id === recordId);
+      if (!house) return;
+
+      document.getElementById("editRecordId").value = house.record_id;
+      document.getElementById("houseId").value = house.house_id || "";
+      document.getElementById("residentName").value = house.resident_name || "";
+      document.getElementById("district").value = house.district || "";
+      document.getElementById("lat").value = hasValidCoords(house) ? house.lat : "";
+      document.getElementById("lng").value = hasValidCoords(house) ? house.lng : "";
+      document.getElementById("netSingle").value = house.net_single ?? 0;
+      document.getElementById("netDouble").value = house.net_double ?? 0;
+      document.getElementById("netFamily").value = house.net_family ?? 0;
+      document.getElementById("occupants").value = house.occupant_count ?? 0;
+      document.getElementById("sprayDate").value = house.spray_date || "";
+      document.getElementById("isSprayed").checked = Boolean(house.is_sprayed);
+      document.getElementById("netsGiven").checked = Boolean(house.nets_given);
+      document.getElementById("needsFollowup").checked = Boolean(house.needs_followup);
+      document.getElementById("notes").value = house.notes || "";
+
+      document.getElementById("formTitle").textContent = "Edit: " + house.resident_name;
+      document.getElementById("submitBtn").textContent = "Update House Record";
+      document.getElementById("cancelEditBtn").style.display = "block";
+
+      switchMobileView("form");
+    };
+
+    window.deleteHouse = function (recordId) {
+      if (!confirm("Delete this house record from this device?")) return;
+      houses = houses.filter((h) => h.record_id !== recordId);
+      DataStore.save(houses);
+      renderApp();
+      showToast("House deleted.");
+    };
+
+    document.getElementById("cancelEditBtn").addEventListener("click", resetFormMode);
+
+    document.getElementById("houseForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const editId = document.getElementById("editRecordId").value;
+      const latRaw = document.getElementById("lat").value.trim();
+      const lngRaw = document.getElementById("lng").value.trim();
+      const parsedLat = latRaw === "" ? null : parseFloat(latRaw);
+      const parsedLng = lngRaw === "" ? null : parseFloat(lngRaw);
+
+      const houseData = {
+        record_id: editId || DataStore.makeId(),
+        house_id: document.getElementById("houseId").value.trim(),
+        resident_name: document.getElementById("residentName").value.trim(),
+        district: document.getElementById("district").value.trim(),
+        lat: Number.isFinite(parsedLat) ? parsedLat : null,
+        lng: Number.isFinite(parsedLng) ? parsedLng : null,
+        net_single: Math.max(0, parseInt(document.getElementById("netSingle").value, 10) || 0),
+        net_double: Math.max(0, parseInt(document.getElementById("netDouble").value, 10) || 0),
+        net_family: Math.max(0, parseInt(document.getElementById("netFamily").value, 10) || 0),
+        occupant_count: Math.max(0, parseInt(document.getElementById("occupants").value, 10) || 0),
+        spray_date: document.getElementById("sprayDate").value,
+        is_sprayed: document.getElementById("isSprayed").checked,
+        nets_given: document.getElementById("netsGiven").checked,
+        needs_followup: document.getElementById("needsFollowup").checked,
+        notes: document.getElementById("notes").value.trim(),
+        updated_by: currentUser || "unknown",
+        updated_at: new Date().toISOString()
+      };
+
+      if (editId) {
+        houses = houses.map((h) => (h.record_id === editId ? houseData : h));
+        showToast("Updated " + houseData.resident_name);
+      } else {
+        houses.push(houseData);
+        showToast("Saved " + houseData.resident_name + "!");
+      }
+
+      DataStore.save(houses);
+      if (tempClickMarker) {
+        map.removeLayer(tempClickMarker);
+        tempClickMarker = null;
+      }
+
+      resetFormMode();
+      renderApp();
+
+      if (hasValidCoords(houseData)) {
+        switchMobileView("map");
+        setTimeout(() => map.setView([houseData.lat, houseData.lng], 15), 180);
+      } else {
+        switchMobileView("list");
+      }
+    });
+
+    /* =========================================================
+       STEP 8: CSV IMPORT (3-COLUMN & MULTI-NET) + CSV EXPORT
+       ========================================================= */
+    function parseCSV(text) {
+      const cleaned = text.replace(/^\uFEFF/, "");
+      const rows = [];
+      let row = [];
+      let cell = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < cleaned.length; i++) {
+        const ch = cleaned[i];
+        const next = cleaned[i + 1];
+
+        if (inQuotes) {
+          if (ch === '"' && next === '"') {
+            cell += '"';
+            i++;
+          } else if (ch === '"') {
+            inQuotes = false;
+          } else {
+            cell += ch;
+          }
+        } else {
+          if (ch === '"') {
+            inQuotes = true;
+          } else if (ch === ",") {
+            row.push(cell.trim());
+            cell = "";
+          } else if (ch === "\n" || ch === "\r") {
+            if (ch === "\r" && next === "\n") i++;
+            row.push(cell.trim());
+            if (row.some((val) => val !== "")) rows.push(row);
+            row = [];
+            cell = "";
+          } else {
+            cell += ch;
+          }
+        }
+      }
+      if (cell.length > 0 || row.length > 0) {
+        row.push(cell.trim());
+        if (row.some((val) => val !== "")) rows.push(row);
+      }
+      return rows;
+    }
+
+    function normalizeHeader(header) {
+      return (header || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    function parseBool(val) {
+      const s = String(val || "").trim().toLowerCase();
+      return s === "yes" || s === "true" || s === "1" || s === "y";
+    }
+
+    document.getElementById("importBtn").addEventListener("click", () => {
+      document.getElementById("csvFileInput").click();
+    });
+
+    document.getElementById("csvFileInput").addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const rows = parseCSV(e.target.result);
+        if (rows.length < 2) {
+          alert("CSV needs a header row and at least one household row.");
+          return;
+        }
+
+        const headers = rows[0].map(normalizeHeader);
+        const findCol = (aliases) => headers.findIndex((h) => aliases.includes(h));
+
+        let nameIdx = findCol(["residentname", "name", "householdname", "owner", "nama"]);
+        let netCountIdx = findCol(["netcount", "nets", "count", "bednets", "bilangankelambu", "kelambu"]);
+        let netSizeIdx = findCol(["netsize", "size", "saizkelambu", "saiz"]);
+
+        // Also detect separate Single / Double / Family columns (for re-importing exports)
+        const singleIdx = findCol(["singlenets", "netsingle", "single"]);
+        const doubleIdx = findCol(["doublenets", "netdouble", "double"]);
+        const familyIdx = findCol(["familynets", "netfamily", "family"]);
+
+        // Fallback for 3-column CSVs with custom header titles
+        if (nameIdx === -1 && netCountIdx === -1 && singleIdx === -1 && rows[0].length >= 3) {
+          nameIdx = 0;
+          netCountIdx = 1;
+          netSizeIdx = 2;
+        }
+
+        const idIdx = findCol(["houseid", "id", "houseno"]);
+        const districtIdx = findCol(["districtvillage", "district", "village", "kampung", "location"]);
+        const latIdx = findCol(["latitude", "lat"]);
+        const lngIdx = findCol(["longitude", "lng", "lon", "long"]);
+        const occIdx = findCol(["occupantcount", "occupants", "people"]);
+        const sprayDateIdx = findCol(["spraydate", "irsdate"]);
+        const sprayedIdx = findCol(["sprayed", "issprayed"]);
+        const netsGivenIdx = findCol(["netsgiven", "givennets"]);
+        const followupIdx = findCol(["followup", "needsfollowup"]);
+        const notesIdx = findCol(["notes", "fieldnotes", "remarks"]);
+
+        let defaultDistrict = "Sabah";
+        if (districtIdx === -1) {
+          const inputVillage = prompt(
+            "Enter Village / District name for this imported list (optional):",
+            "Papar"
+          );
+          if (inputVillage && inputVillage.trim() !== "") {
+            defaultDistrict = inputVillage.trim();
+          }
+        }
+
+        // Check if the same resident name appears on multiple rows (e.g., separate rows per net size)
+        const nameCounts = {};
+        for (let i = 1; i < rows.length; i++) {
+          const nm = (nameIdx >= 0 ? rows[i][nameIdx] : "") || "";
+          const key = nm.trim().toLowerCase();
+          if (key) nameCounts[key] = (nameCounts[key] || 0) + 1;
+        }
+        const repeatedNamesCount = Object.values(nameCounts).filter((c) => c > 1).length;
+        let mergeDuplicates = false;
+        if (repeatedNamesCount > 0) {
+          mergeDuplicates = confirm(
+            `Found ${repeatedNamesCount} repeated resident name(s) in this CSV.\n` +
+            `Click OK to combine their net counts into one house record (useful if one house has multiple net sizes on separate rows).`
+          );
+        }
+
+        const importedBatch = [];
+        const batchByName = {};
+
+        for (let i = 1; i < rows.length; i++) {
+          const r = rows[i];
+          const getVal = (idx) => (idx >= 0 && r[idx] !== undefined ? r[idx] : "");
+
+          const residentName = getVal(nameIdx);
+          if (!residentName) continue;
+
+          // Read either explicit Single/Double/Family columns OR 3-column Net Count + Net Size
+          let netSingle = parseInt(getVal(singleIdx), 10) || 0;
+          let netDouble = parseInt(getVal(doubleIdx), 10) || 0;
+          let netFamily = parseInt(getVal(familyIdx), 10) || 0;
+
+          if (singleIdx === -1 && doubleIdx === -1 && familyIdx === -1) {
+            const countVal = parseInt(getVal(netCountIdx), 10) || 0;
+            const sizeKey = normalizeNetSizeKey(getVal(netSizeIdx));
+            if (sizeKey === "net_single") netSingle += countVal;
+            else if (sizeKey === "net_double") netDouble += countVal;
+            else if (sizeKey === "net_family") netFamily += countVal;
+          }
+
+          const nameKey = residentName.trim().toLowerCase();
+          if (mergeDuplicates && batchByName[nameKey]) {
+            // Merge net sizes into the existing house in this import batch
+            const existing = batchByName[nameKey];
+            existing.net_single += netSingle;
+            existing.net_double += netDouble;
+            existing.net_family += netFamily;
+            if (getTotalNets(existing) > 0) existing.nets_given = true;
+            continue;
+          }
+
+          const latNum = parseFloat(getVal(latIdx));
+          const lngNum = parseFloat(getVal(lngIdx));
+          const sprayDateVal = getVal(sprayDateIdx) || "";
+          const totalNets = netSingle + netDouble + netFamily;
+
+          const newHouse = {
+            record_id: DataStore.makeId() + "_" + i,
+            house_id: getVal(idIdx) || `SBH-${String(houses.length + importedBatch.length + 1).padStart(3, "0")}`,
+            resident_name: residentName,
+            district: getVal(districtIdx) || defaultDistrict,
+            lat: Number.isFinite(latNum) ? latNum : null,
+            lng: Number.isFinite(lngNum) ? lngNum : null,
+            net_single: netSingle,
+            net_double: netDouble,
+            net_family: netFamily,
+            occupant_count: parseInt(getVal(occIdx), 10) || 0,
+            spray_date: sprayDateVal,
+            is_sprayed: sprayedIdx >= 0 ? parseBool(getVal(sprayedIdx)) : Boolean(sprayDateVal),
+            nets_given: netsGivenIdx >= 0 ? parseBool(getVal(netsGivenIdx)) : totalNets > 0,
+            needs_followup: followupIdx >= 0 ? parseBool(getVal(followupIdx)) : false,
+            notes: getVal(notesIdx) || "",
+            updated_by: currentUser || "import",
+            updated_at: new Date().toISOString()
+          };
+
+          importedBatch.push(newHouse);
+          batchByName[nameKey] = newHouse;
+        }
+
+        houses.push(...importedBatch);
+        DataStore.save(houses);
+        document.getElementById("statusFilter").value = "NEEDS_GPS";
+        renderApp();
+        showToast(`Imported ${importedBatch.length} house(s)! Tap any row to add GPS.`);
+        event.target.value = "";
+      };
+
+      reader.readAsText(file);
+    });
+
+    function downloadCSVFile(filename, csvText) {
+      const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    // 3-column CSV template demonstrating how repeated names combine multiple net sizes
+    document.getElementById("templateBtn").addEventListener("click", () => {
+      const template = [
+        "Resident Name,Net Count,Net Size",
+        "En. Roslan bin Ali,2,Double",
+        "En. Roslan bin Ali,1,Single",
+        "Pn. Siti Aminah,2,Family",
+        "En. Peter Mojuntin,1,Single"
+      ].join("\n");
+      downloadCSVFile("sabah_3col_template.csv", template);
+    });
+
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const headers = [
+        "House ID", "Resident Name", "District/Village",
+        "Single Nets", "Double Nets", "Family Nets", "Total Nets",
+        "Occupant Count", "Spray Date",
+        "Sprayed", "Nets Given", "Follow-up",
+        "Latitude", "Longitude", "Notes", "Updated By", "Last Updated"
+      ];
+      const esc = (val) => `"${String(val ?? "").replace(/"/g, '""')}"`;
+
+      const rows = houses.map((h) => [
+        esc(h.house_id),
+        esc(h.resident_name),
+        esc(h.district),
+        h.net_single ?? 0,
+        h.net_double ?? 0,
+        h.net_family ?? 0,
+        getTotalNets(h),
+        h.occupant_count ?? 0,
+        esc(h.spray_date),
+        h.is_sprayed ? "Yes" : "No",
+        h.nets_given ? "Yes" : "No",
+        h.needs_followup ? "Yes" : "No",
+        hasValidCoords(h) ? h.lat : "",
+        hasValidCoords(h) ? h.lng : "",
+        esc(h.notes),
+        esc(h.updated_by),
+        esc(h.updated_at)
+      ]);
+
+      const csvText = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      downloadCSVFile("sabah_malaria_houses.csv", csvText);
+    });
+
+    /* =========================================================
+       STEP 9: MAP CLICK, GPS & NAVIGATION EVENTS
+       ========================================================= */
+    map.on("click", (event) => {
+      const { lat, lng } = event.latlng;
+      document.getElementById("lat").value = lat.toFixed(5);
+      document.getElementById("lng").value = lng.toFixed(5);
+
+      if (tempClickMarker) map.removeLayer(tempClickMarker);
+      tempClickMarker = L.circleMarker([lat, lng], {
+        radius: 8,
+        color: "#2b6cb0",
+        fillColor: "#63b3ed",
+        fillOpacity: 0.7,
+        dashArray: "4"
+      }).addTo(map);
+
+      showToast("Coordinates picked! Open '+ Add House' to save.");
+    });
+
+    document.getElementById("gpsBtn").addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        alert("GPS is not supported on this browser.");
+        return;
+      }
+
+      showToast("Getting GPS coordinates...");
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          document.getElementById("lat").value = lat.toFixed(5);
+          document.getElementById("lng").value = lng.toFixed(5);
+          map.setView([lat, lng], 16);
+          showToast("GPS coordinates captured!");
+        },
+        () => {
+          alert("Could not get GPS. Please allow location access in your browser settings.");
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    });
+
+    document.getElementById("searchInput").addEventListener("input", renderApp);
+    document.getElementById("statusFilter").addEventListener("change", renderApp);
+    document.getElementById("tabMap").addEventListener("click", () => switchMobileView("map"));
+    document.getElementById("tabForm").addEventListener("click", () => switchMobileView("form"));
+    document.getElementById("tabList").addEventListener("click", () => switchMobileView("list"));
+
+    /* =========================================================
+       STEP 10: OFFLINE MAP TILE SAVER & SERVICE WORKER
+       ========================================================= */
+    function latLngToTile(lat, lng, zoom) {
+      const n = Math.pow(2, zoom);
+      const x = Math.floor(((lng + 180) / 360) * n);
+      const latRad = (lat * Math.PI) / 180;
+      const y = Math.floor(
+        ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n
+      );
+      return { x, y };
+    }
+
+    document.getElementById("cacheMapBtn").addEventListener("click", async () => {
+      const statusBox = document.getElementById("cacheStatus");
+
+      if (!("caches" in window)) {
+        alert("Offline map caching requires opening this app via GitHub Pages (HTTPS) or localhost.");
+        return;
+      }
+      if (!navigator.onLine) {
+        showToast("You are offline. Connect to Wi-Fi/data first to save map tiles.");
+        return;
+      }
+
+      const bounds = map.getBounds();
+      const currentZoom = Math.min(Math.max(map.getZoom(), 8), 16);
+      const zoomLevels = [currentZoom, Math.min(currentZoom + 1, 17)];
+
+      const urlsToCache = [];
+      for (const z of zoomLevels) {
+        const nw = latLngToTile(bounds.getNorth(), bounds.getWest(), z);
+        const se = latLngToTile(bounds.getSouth(), bounds.getEast(), z);
+        const minX = Math.min(nw.x, se.x);
+        const maxX = Math.max(nw.x, se.x);
+        const minY = Math.min(nw.y, se.y);
+        const maxY = Math.max(nw.y, se.y);
+
+        for (let x = minX; x <= maxX; x++) {
+          for (let y = minY; y <= maxY; y++) {
+            if (urlsToCache.length >= MAX_OFFLINE_TILES_PER_TAP) break;
+            const tileUrl = activeTileUrl
+              .replace("{z}", z)
+              .replace("{y}", y)
+              .replace("{x}", x);
+            urlsToCache.push(tileUrl);
+          }
+          if (urlsToCache.length >= MAX_OFFLINE_TILES_PER_TAP) break;
+        }
+      }
+
+      statusBox.style.display = "block";
+      statusBox.textContent = `Saving 0 / ${urlsToCache.length} tiles...`;
+
+      const cache = await caches.open(TILE_CACHE_NAME);
+      let savedCount = 0;
+
+      for (const url of urlsToCache) {
+        try {
+          const existing = await cache.match(url);
+          if (!existing) {
+            const response = await fetch(url, { mode: "no-cors" });
+            await cache.put(url, response);
+          }
+          savedCount++;
+          statusBox.textContent = `Saving ${savedCount} / ${urlsToCache.length} tiles...`;
+        } catch {
+          // Skip individual tile errors silently
+        }
+      }
+
+      statusBox.textContent = `Saved ${savedCount} map tiles for offline use!`;
+      setTimeout(() => { statusBox.style.display = "none"; }, 4000);
+    });
+
+    function updateOnlineStatus() {
+      const badge = document.getElementById("onlineBadge");
+      if (navigator.onLine) {
+        badge.textContent = "Online";
+        badge.classList.remove("offline");
+      } else {
+        badge.textContent = "Offline Mode";
+        badge.classList.add("offline");
+      }
+    }
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+    updateOnlineStatus();
+
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch((err) => {
+          console.log("Service Worker registration skipped:", err);
+        });
+      });
+    }
+
+    updateAuthUI();
+    renderApp();
+  </script>
+</body>
+</html>
