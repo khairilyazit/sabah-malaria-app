@@ -1,11 +1,10 @@
 /* =========================================================
-   SERVICE WORKER: Powers Offline Mode & Cached Map Tiles
+   SERVICE WORKER (v3): Offline Support for GitHub Pages
    ========================================================= */
 
-const APP_CACHE = "sabah-malaria-app-v1";
+const APP_CACHE = "sabah-malaria-app-v3";
 const TILE_CACHE = "sabah-malaria-tiles-v1";
 
-// Core files needed so the app opens with zero internet signal
 const APP_FILES = [
   "./",
   "./index.html",
@@ -14,7 +13,6 @@ const APP_FILES = [
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
 ];
 
-// 1. INSTALL: Save core app files into the phone's cache
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(APP_CACHE).then((cache) => cache.addAll(APP_FILES))
@@ -22,7 +20,6 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// 2. ACTIVATE: Clean up old app caches if we release a new version
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -36,11 +33,9 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// 3. FETCH: Serve cached map tiles & app files when offline
 self.addEventListener("fetch", (event) => {
   const url = event.request.url;
 
-  // Strategy A: Esri Map Tiles -> Check Cache first, otherwise download & save
   if (url.includes("server.arcgisonline.com")) {
     event.respondWith(
       caches.open(TILE_CACHE).then(async (cache) => {
@@ -61,7 +56,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Strategy B: App Files -> Try network first, fall back to cache if offline
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
