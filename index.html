@@ -163,7 +163,7 @@
     }
 
     #sidebar {
-      width: 390px;
+      width: 400px;
       background: var(--bg);
       border-right: 1px solid var(--border);
       overflow-y: auto;
@@ -192,7 +192,7 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
-      max-width: 240px;
+      max-width: 220px;
     }
 
     .btn-offline-cache {
@@ -201,7 +201,7 @@
       border: 1px solid #ffffff;
       border-radius: 8px;
       padding: 8px 12px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: bold;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
@@ -219,8 +219,34 @@
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     }
 
+    /* Compact Leaflet map legend */
+    .map-legend {
+      background: rgba(255, 255, 255, 0.94);
+      padding: 8px 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      font-size: 0.72rem;
+      line-height: 1.5;
+      color: var(--text);
+    }
+
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      border: 1px solid #ffffff;
+      box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+    }
+
     /* =========================================================
-       5. CARDS, FORMS & BUTTONS
+       5. CARDS, FORMS, MULTI-NET INPUTS & CHECKBOXES
        ========================================================= */
     .card {
       background: #ffffff;
@@ -285,6 +311,60 @@
       flex: 1;
     }
 
+    /* 3-column grid for Single, Double, and Family net counts */
+    .three-col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 4px;
+    }
+
+    .three-col label {
+      margin-top: 0;
+      font-size: 0.76rem;
+      text-align: center;
+    }
+
+    .three-col input {
+      text-align: center;
+      padding: 8px 4px;
+    }
+
+    /* Touch-friendly multi-status checkbox cards */
+    .status-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .check-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 0;
+      padding: 9px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #f8fafc;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+
+    .check-card input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+      accent-color: var(--primary);
+      flex-shrink: 0;
+    }
+
     .csv-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -319,19 +399,27 @@
       line-height: 1.35;
     }
 
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
     .badge {
       display: inline-block;
       padding: 2px 8px;
       border-radius: 12px;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       color: #ffffff;
       font-weight: bold;
-      margin-left: 4px;
     }
 
-    .badge-nogps {
-      background: #718096;
-    }
+    .badge-sprayed { background: #0d9488; }
+    .badge-nets { background: #2b6cb0; }
+    .badge-followup { background: #dd6b20; }
+    .badge-pending { background: #e53e3e; }
+    .badge-nogps { background: #64748b; }
 
     #toast {
       position: fixed;
@@ -402,9 +490,7 @@
 </head>
 <body class="view-map">
 
-  <!-- =========================================================
-       LOGIN SCREEN (Protects UI + Tracks Active Officer Name)
-       ========================================================= -->
+  <!-- LOGIN OVERLAY -->
   <div id="loginOverlay">
     <div class="login-box">
       <h1>Sabah Malaria Control</h1>
@@ -418,15 +504,13 @@
         <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Enter password" required />
 
         <div class="login-error" id="loginError">Invalid username or password.</div>
-
         <button type="submit">Sign In</button>
       </form>
 
       <div class="demo-note">
         <strong>Testing Accounts (On-Device Phase):</strong><br/>
         Username: <code>officer1</code> | Password: <code>sabah2026</code><br/>
-        Username: <code>admin</code> | Password: <code>malaria2026</code><br/>
-        <em>Will switch to secure SQL server login in the next phase.</em>
+        Username: <code>admin</code> | Password: <code>malaria2026</code>
       </div>
     </div>
   </div>
@@ -488,19 +572,20 @@
             Use My Current GPS Location
           </button>
 
-          <!-- BED NET FIELDS: STRICT SINGLE / DOUBLE / FAMILY ONLY -->
-          <div class="two-col">
+          <!-- MULTIPLE NET SIZES PER HOUSE -->
+          <label>Bed Nets Given by Size (LLIN)</label>
+          <div class="three-col">
             <div>
-              <label for="netCount">Net Count</label>
-              <input type="number" id="netCount" min="0" step="1" value="1" required />
+              <label for="netSingle">Single</label>
+              <input type="number" id="netSingle" min="0" step="1" value="0" />
             </div>
             <div>
-              <label for="netSize">Net Size</label>
-              <select id="netSize" required>
-                <option value="Single">Single</option>
-                <option value="Double">Double</option>
-                <option value="Family">Family</option>
-              </select>
+              <label for="netDouble">Double</label>
+              <input type="number" id="netDouble" min="0" step="1" value="0" />
+            </div>
+            <div>
+              <label for="netFamily">Family</label>
+              <input type="number" id="netFamily" min="0" step="1" value="0" />
             </div>
           </div>
 
@@ -516,13 +601,25 @@
             </div>
           </div>
 
-          <label for="status">Control Program Status</label>
-          <select id="status">
-            <option value="Pending">Pending Visit</option>
-            <option value="Sprayed">Sprayed (IRS / ORS)</option>
-            <option value="Nets Distributed">Nets Distributed (LLIN)</option>
-            <option value="Follow-up">Follow-up Needed</option>
-          </select>
+          <!-- MULTI-SELECT CONTROL PROGRAM STATUS -->
+          <label>Control Program Status (Tick all that apply)</label>
+          <div class="status-group">
+            <label class="check-card">
+              <input type="checkbox" id="isSprayed" />
+              <span>Sprayed (IRS / ORS)</span>
+            </label>
+            <label class="check-card">
+              <input type="checkbox" id="netsGiven" />
+              <span>Given Nets (LLIN)</span>
+            </label>
+            <label class="check-card">
+              <input type="checkbox" id="needsFollowup" />
+              <span>Follow-up Needed</span>
+            </label>
+          </div>
+          <p class="helper-text" style="margin-top:4px;">
+            Leave all unchecked if the house is still <strong>Pending</strong>.
+          </p>
 
           <label for="notes">Field Notes</label>
           <textarea id="notes" rows="2" placeholder="Optional field notes..."></textarea>
@@ -534,7 +631,7 @@
         </form>
       </section>
 
-      <!-- PANEL B: SEARCH, 3-COLUMN CSV IMPORT/EXPORT & HOUSE LIST -->
+      <!-- PANEL B: SEARCH, CSV IMPORT/EXPORT & HOUSE LIST -->
       <section class="card" id="listPanel">
         <h2>Tracked Houses (<span id="houseCount">0</span>)</h2>
 
@@ -545,13 +642,13 @@
         <select id="statusFilter">
           <option value="ALL">All Houses</option>
           <option value="NEEDS_GPS">Needs GPS Pin</option>
-          <option value="Pending">Pending Visit</option>
-          <option value="Sprayed">Sprayed (IRS / ORS)</option>
-          <option value="Nets Distributed">Nets Distributed (LLIN)</option>
-          <option value="Follow-up">Follow-up Needed</option>
+          <option value="PENDING">Pending (No Spray &amp; No Nets)</option>
+          <option value="BOTH">Both Sprayed &amp; Given Nets</option>
+          <option value="SPRAYED">Sprayed (IRS / ORS)</option>
+          <option value="NETS">Given Nets (LLIN)</option>
+          <option value="FOLLOWUP">Follow-up Needed</option>
         </select>
 
-        <!-- Hidden CSV File Picker -->
         <input type="file" id="csvFileInput" accept=".csv,text/csv" style="display:none;" />
 
         <div class="csv-actions">
@@ -595,34 +692,32 @@
 
   <script>
     /* =========================================================
-       STEP 1: ADJUSTABLE SETTINGS & TEMPORARY DEMO ACCOUNTS
+       STEP 1: ADJUSTABLE SETTINGS & PIN COLORS
        ========================================================= */
     const SABAH_CENTER = [5.7333, 115.9333]; // Papar, Sabah
     const DEFAULT_ZOOM = 9;
-    const STORAGE_KEY = "sabah_malaria_houses_sql_v5";
+    const STORAGE_KEY = "sabah_malaria_houses_sql_v6";
     const AUTH_SESSION_KEY = "sabah_malaria_logged_user";
     const TILE_CACHE_NAME = "sabah-malaria-tiles-v1";
     const MAX_OFFLINE_TILES_PER_TAP = 150;
 
-    // Allowed bed net sizes (matches our SQL CHECK constraint)
-    const ALLOWED_NET_SIZES = ["Single", "Double", "Family"];
-
-    // TEMPORARY local accounts for GitHub Pages testing only.
-    // These will move to secure server-side PostgreSQL/Supabase auth next!
+    // Temporary demo accounts until we connect your SQL server
     const DEMO_USERS = {
       "officer1": "sabah2026",
       "officer2": "sabah2026",
       "admin": "malaria2026"
     };
 
-    const STATUS_COLORS = {
-      "Pending": "#e53e3e",
-      "Sprayed": "#2f855a",
-      "Nets Distributed": "#3182ce",
-      "Follow-up": "#dd6b20"
+    // Map marker colors for each combined status
+    const PIN_COLORS = {
+      BOTH: "#15803d",      // Dark Green: Sprayed + Nets Given
+      SPRAYED: "#0d9488",   // Teal: Sprayed Only
+      NETS: "#2b6cb0",      // Blue: Nets Given Only
+      FOLLOWUP: "#dd6b20",  // Orange: Follow-up Needed
+      PENDING: "#e53e3e"    // Red: Pending
     };
 
-    // Starter sample data using SQL-style snake_case column names
+    // Starter sample houses showing combined status & multiple net sizes
     const SAMPLE_HOUSES = [
       {
         record_id: "rec_sample_1",
@@ -631,12 +726,15 @@
         district: "Kg. Limbahau, Papar",
         lat: 5.7333,
         lng: 115.9333,
-        net_count: 3,
-        net_size: "Family",
-        occupant_count: 5,
+        net_single: 1,
+        net_double: 2,
+        net_family: 1,
+        occupant_count: 6,
         spray_date: "2026-11-10",
-        status: "Sprayed",
-        notes: "IRS completed. Easy road access.",
+        is_sprayed: true,
+        nets_given: true,
+        needs_followup: false,
+        notes: "Sprayed and issued mixed net sizes.",
         updated_by: "officer1",
         updated_at: new Date().toISOString()
       },
@@ -647,12 +745,15 @@
         district: "Keningau",
         lat: 5.3378,
         lng: 116.1602,
-        net_count: 2,
-        net_size: "Double",
+        net_single: 0,
+        net_double: 2,
+        net_family: 0,
         occupant_count: 4,
         spray_date: "",
-        status: "Pending",
-        notes: "Scheduled for vector control visit.",
+        is_sprayed: false,
+        nets_given: true,
+        needs_followup: true,
+        notes: "Nets issued; return to spray house next week.",
         updated_by: "officer1",
         updated_at: new Date().toISOString()
       },
@@ -663,11 +764,14 @@
         district: "Ranau",
         lat: null,
         lng: null,
-        net_count: 1,
-        net_size: "Single",
-        occupant_count: 0,
+        net_single: 1,
+        net_double: 0,
+        net_family: 1,
+        occupant_count: 5,
         spray_date: "",
-        status: "Pending",
+        is_sprayed: false,
+        nets_given: false,
+        needs_followup: false,
         notes: "Imported from CSV - needs GPS pin in field.",
         updated_by: "admin",
         updated_at: new Date().toISOString()
@@ -675,7 +779,7 @@
     ];
 
     /* =========================================================
-       STEP 2: AUTHENTICATION (CLIENT-SIDE GATE FOR TESTING)
+       STEP 2: LOGIN SESSION LOGIC
        ========================================================= */
     let currentUser = localStorage.getItem(AUTH_SESSION_KEY) || null;
 
@@ -718,8 +822,7 @@
     });
 
     /* =========================================================
-       STEP 3: ON-DEVICE DATA STORE (SQL-READY INTERFACE)
-       When we add PostgreSQL / Supabase, we update this section!
+       STEP 3: ON-DEVICE DATA STORE (SQL-READY STRUCTURE)
        ========================================================= */
     const DataStore = {
       load() {
@@ -742,7 +845,7 @@
     let houses = DataStore.load();
 
     /* =========================================================
-       STEP 4: INITIALIZE ESRI BASEMAPS & LEAFLET MAP
+       STEP 4: INITIALIZE ESRI MAP, LAYERS & LEGEND
        ========================================================= */
     const ESRI_URLS = {
       street: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
@@ -768,6 +871,21 @@
       "Topographic": topoMap
     }).addTo(map);
 
+    // Add a compact color legend in the bottom-right corner
+    const legend = L.control({ position: "bottomright" });
+    legend.onAdd = function () {
+      const div = L.DomUtil.create("div", "map-legend");
+      div.innerHTML = `
+        <div class="legend-row"><span class="legend-dot" style="background:${PIN_COLORS.BOTH}"></span> Sprayed + Nets</div>
+        <div class="legend-row"><span class="legend-dot" style="background:${PIN_COLORS.SPRAYED}"></span> Sprayed Only</div>
+        <div class="legend-row"><span class="legend-dot" style="background:${PIN_COLORS.NETS}"></span> Nets Only</div>
+        <div class="legend-row"><span class="legend-dot" style="background:${PIN_COLORS.FOLLOWUP}"></span> Follow-up</div>
+        <div class="legend-row"><span class="legend-dot" style="background:${PIN_COLORS.PENDING}"></span> Pending</div>
+      `;
+      return div;
+    };
+    legend.addTo(map);
+
     map.on("baselayerchange", (e) => {
       if (e.name === "Satellite View") activeTileUrl = ESRI_URLS.satellite;
       else if (e.name === "Topographic") activeTileUrl = ESRI_URLS.topo;
@@ -778,7 +896,7 @@
     let tempClickMarker = null;
 
     /* =========================================================
-       STEP 5: HELPER FUNCTIONS
+       STEP 5: HELPER FUNCTIONS (MULTI-NETS & MULTI-STATUS)
        ========================================================= */
     function escapeHtml(text) {
       const div = document.createElement("div");
@@ -795,13 +913,50 @@
       );
     }
 
-    // Cleans CSV net size text strictly into Single, Double, or Family
-    function normalizeNetSize(rawValue) {
+    function getTotalNets(house) {
+      return (house.net_single || 0) + (house.net_double || 0) + (house.net_family || 0);
+    }
+
+    // Formats mixed net sizes cleanly (e.g., "1 Single, 2 Double (Total: 3)")
+    function formatNetsSummary(house) {
+      const parts = [];
+      if (house.net_single > 0) parts.push(`${house.net_single} Single`);
+      if (house.net_double > 0) parts.push(`${house.net_double} Double`);
+      if (house.net_family > 0) parts.push(`${house.net_family} Family`);
+      if (parts.length === 0) return "None (0)";
+      return `${parts.join(", ")} (Total: ${getTotalNets(house)})`;
+    }
+
+    // Determines the map pin color (Follow-up takes top visual priority so it's not missed)
+    function getPinColor(house) {
+      if (house.needs_followup) return PIN_COLORS.FOLLOWUP;
+      if (house.is_sprayed && house.nets_given) return PIN_COLORS.BOTH;
+      if (house.is_sprayed) return PIN_COLORS.SPRAYED;
+      if (house.nets_given) return PIN_COLORS.NETS;
+      return PIN_COLORS.PENDING;
+    }
+
+    // Builds HTML badges showing EVERY active status on a house
+    function buildStatusBadges(house, includeGpsBadge = false) {
+      const badges = [];
+      if (house.is_sprayed) badges.push(`<span class="badge badge-sprayed">Sprayed</span>`);
+      if (house.nets_given) badges.push(`<span class="badge badge-nets">Nets Given</span>`);
+      if (house.needs_followup) badges.push(`<span class="badge badge-followup">Follow-up</span>`);
+      if (!house.is_sprayed && !house.nets_given && !house.needs_followup) {
+        badges.push(`<span class="badge badge-pending">Pending</span>`);
+      }
+      if (includeGpsBadge && !hasValidCoords(house)) {
+        badges.push(`<span class="badge badge-nogps">Needs GPS</span>`);
+      }
+      return badges.join(" ");
+    }
+
+    function normalizeNetSizeKey(rawValue) {
       const cleaned = String(rawValue || "").trim().toLowerCase();
-      if (cleaned === "s" || cleaned.includes("single")) return "Single";
-      if (cleaned === "d" || cleaned.includes("double")) return "Double";
-      if (cleaned === "f" || cleaned.includes("family")) return "Family";
-      return "Single"; // Safe fallback if a CSV cell is blank or unexpected
+      if (cleaned === "s" || cleaned.includes("single")) return "net_single";
+      if (cleaned === "d" || cleaned.includes("double")) return "net_double";
+      if (cleaned === "f" || cleaned.includes("family")) return "net_family";
+      return "net_single";
     }
 
     let toastTimer = null;
@@ -830,24 +985,22 @@
        STEP 6: RENDER MAP MARKERS & HOUSE LIST
        ========================================================= */
     function createMarker(house) {
-      const color = STATUS_COLORS[house.status] || "#4a5568";
-
       const marker = L.circleMarker([house.lat, house.lng], {
         radius: 10,
-        fillColor: color,
+        fillColor: getPinColor(house),
         color: "#ffffff",
         weight: 2,
         opacity: 1,
-        fillOpacity: 0.92
+        fillOpacity: 0.94
       });
 
       const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${house.lat},${house.lng}`;
 
       marker.bindPopup(`
         <strong>${escapeHtml(house.house_id)} — ${escapeHtml(house.resident_name)}</strong><br/>
+        <div class="badge-row" style="margin:4px 0 6px 0;">${buildStatusBadges(house)}</div>
         <b>Location:</b> ${escapeHtml(house.district || "Unspecified")}<br/>
-        <b>Status:</b> ${escapeHtml(house.status)}<br/>
-        <b>Nets:</b> ${escapeHtml(String(house.net_count ?? 0))} (${escapeHtml(house.net_size)})<br/>
+        <b>Nets:</b> ${escapeHtml(formatNetsSummary(house))}<br/>
         <b>Occupants:</b> ${escapeHtml(String(house.occupant_count ?? 0))}<br/>
         <b>Spray Date:</b> ${escapeHtml(house.spray_date || "Not sprayed yet")}<br/>
         <b>Notes:</b> ${escapeHtml(house.notes || "None")}<br/>
@@ -857,11 +1010,11 @@
              style="padding:5px 8px; background:#2b6cb0; color:#fff; text-decoration:none; border-radius:4px; font-size:0.78rem;">
             Navigate
           </a>
-          <button onclick="startEditHouse('${house.record_id}')"
+          <button onclick="startEditHouse('${escapeHtml(house.record_id)}')"
              style="width:auto; margin:0; padding:5px 8px; background:#2d6a4f; font-size:0.78rem;">
             Edit
           </button>
-          <button onclick="deleteHouse('${house.record_id}')"
+          <button onclick="deleteHouse('${escapeHtml(house.record_id)}')"
              style="width:auto; margin:0; padding:5px 8px; background:#c53030; font-size:0.78rem;">
             Delete
           </button>
@@ -873,7 +1026,7 @@
 
     function renderApp() {
       const searchText = document.getElementById("searchInput").value.toLowerCase();
-      const statusFilter = document.getElementById("statusFilter").value;
+      const filter = document.getElementById("statusFilter").value;
       const houseListEl = document.getElementById("houseList");
 
       markerLayer.clearLayers();
@@ -885,13 +1038,15 @@
           (h.resident_name || "").toLowerCase().includes(searchText) ||
           (h.district || "").toLowerCase().includes(searchText);
 
-        let matchesStatus = true;
-        if (statusFilter === "NEEDS_GPS") {
-          matchesStatus = !hasValidCoords(h);
-        } else if (statusFilter !== "ALL") {
-          matchesStatus = h.status === statusFilter;
-        }
-        return matchesText && matchesStatus;
+        let matchesFilter = true;
+        if (filter === "NEEDS_GPS") matchesFilter = !hasValidCoords(h);
+        else if (filter === "PENDING") matchesFilter = !h.is_sprayed && !h.nets_given && !h.needs_followup;
+        else if (filter === "BOTH") matchesFilter = Boolean(h.is_sprayed && h.nets_given);
+        else if (filter === "SPRAYED") matchesFilter = Boolean(h.is_sprayed);
+        else if (filter === "NETS") matchesFilter = Boolean(h.nets_given);
+        else if (filter === "FOLLOWUP") matchesFilter = Boolean(h.needs_followup);
+
+        return matchesText && matchesFilter;
       });
 
       document.getElementById("houseCount").textContent = filtered.length;
@@ -913,19 +1068,16 @@
 
         const item = document.createElement("div");
         item.className = "house-item";
-        const badgeColor = STATUS_COLORS[house.status] || "#4a5568";
-        const gpsBadge = pinned ? "" : `<span class="badge badge-nogps">Needs GPS</span>`;
 
         item.innerHTML = `
           <div>
             <strong>${escapeHtml(house.resident_name)}</strong>
             <small style="color:#627d98;">(${escapeHtml(house.house_id)})</small>
-            <span class="badge" style="background:${badgeColor};">${escapeHtml(house.status)}</span>
-            ${gpsBadge}
           </div>
+          <div class="badge-row">${buildStatusBadges(house, true)}</div>
           <div class="house-meta">
             ${escapeHtml(house.district || "No village")} |
-            Nets: <strong>${escapeHtml(String(house.net_count ?? 0))} ${escapeHtml(house.net_size)}</strong>
+            Nets: <strong>${escapeHtml(formatNetsSummary(house))}</strong>
           </div>
           <div class="house-meta">
             Occupants: <strong>${escapeHtml(String(house.occupant_count ?? 0))}</strong> |
@@ -951,452 +1103,19 @@
     }
 
     /* =========================================================
-       STEP 7: ADD, EDIT & DELETE HOUSE RECORDS
+       STEP 7: FORM SMART SHORTCUTS + ADD / EDIT / DELETE
        ========================================================= */
-    function resetFormMode() {
-      document.getElementById("houseForm").reset();
-      document.getElementById("editRecordId").value = "";
-      document.getElementById("formTitle").textContent = "Add / Pin a House";
-      document.getElementById("submitBtn").textContent = "Save House";
-      document.getElementById("cancelEditBtn").style.display = "none";
-    }
 
-    window.startEditHouse = function (recordId) {
-      const house = houses.find((h) => h.record_id === recordId);
-      if (!house) return;
-
-      document.getElementById("editRecordId").value = house.record_id;
-      document.getElementById("houseId").value = house.house_id || "";
-      document.getElementById("residentName").value = house.resident_name || "";
-      document.getElementById("district").value = house.district || "";
-      document.getElementById("lat").value = hasValidCoords(house) ? house.lat : "";
-      document.getElementById("lng").value = hasValidCoords(house) ? house.lng : "";
-      document.getElementById("netCount").value = house.net_count ?? 0;
-      document.getElementById("netSize").value = ALLOWED_NET_SIZES.includes(house.net_size)
-        ? house.net_size
-        : "Single";
-      document.getElementById("occupants").value = house.occupant_count ?? 0;
-      document.getElementById("sprayDate").value = house.spray_date || "";
-      document.getElementById("status").value = house.status || "Pending";
-      document.getElementById("notes").value = house.notes || "";
-
-      document.getElementById("formTitle").textContent = "Edit: " + house.resident_name;
-      document.getElementById("submitBtn").textContent = "Update House Record";
-      document.getElementById("cancelEditBtn").style.display = "block";
-
-      switchMobileView("form");
-    };
-
-    window.deleteHouse = function (recordId) {
-      if (!confirm("Delete this house record from this device?")) return;
-      houses = houses.filter((h) => h.record_id !== recordId);
-      DataStore.save(houses);
-      renderApp();
-      showToast("House deleted.");
-    };
-
-    document.getElementById("cancelEditBtn").addEventListener("click", resetFormMode);
-
-    document.getElementById("houseForm").addEventListener("submit", (event) => {
-      event.preventDefault();
-
-      const editId = document.getElementById("editRecordId").value;
-      const latRaw = document.getElementById("lat").value.trim();
-      const lngRaw = document.getElementById("lng").value.trim();
-      const parsedLat = latRaw === "" ? null : parseFloat(latRaw);
-      const parsedLng = lngRaw === "" ? null : parseFloat(lngRaw);
-
-      const houseData = {
-        record_id: editId || DataStore.makeId(),
-        house_id: document.getElementById("houseId").value.trim(),
-        resident_name: document.getElementById("residentName").value.trim(),
-        district: document.getElementById("district").value.trim(),
-        lat: Number.isFinite(parsedLat) ? parsedLat : null,
-        lng: Number.isFinite(parsedLng) ? parsedLng : null,
-        net_count: parseInt(document.getElementById("netCount").value, 10) || 0,
-        net_size: normalizeNetSize(document.getElementById("netSize").value),
-        occupant_count: parseInt(document.getElementById("occupants").value, 10) || 0,
-        spray_date: document.getElementById("sprayDate").value,
-        status: document.getElementById("status").value,
-        notes: document.getElementById("notes").value.trim(),
-        updated_by: currentUser || "unknown",
-        updated_at: new Date().toISOString()
-      };
-
-      if (editId) {
-        houses = houses.map((h) => (h.record_id === editId ? houseData : h));
-        showToast("Updated " + houseData.resident_name);
-      } else {
-        houses.push(houseData);
-        showToast("Saved " + houseData.resident_name + "!");
-      }
-
-      DataStore.save(houses);
-      if (tempClickMarker) {
-        map.removeLayer(tempClickMarker);
-        tempClickMarker = null;
-      }
-
-      resetFormMode();
-      renderApp();
-
-      if (hasValidCoords(houseData)) {
-        switchMobileView("map");
-        setTimeout(() => map.setView([houseData.lat, houseData.lng], 15), 180);
-      } else {
-        switchMobileView("list");
+    // Auto-tick "Sprayed" when an officer picks a spray date
+    document.getElementById("sprayDate").addEventListener("change", (e) => {
+      if (e.target.value) {
+        document.getElementById("isSprayed").checked = true;
       }
     });
 
-    /* =========================================================
-       STEP 8: 3-COLUMN CSV IMPORT, TEMPLATE & FULL CSV EXPORT
-       ========================================================= */
-    function parseCSV(text) {
-      const cleaned = text.replace(/^\uFEFF/, "");
-      const rows = [];
-      let row = [];
-      let cell = "";
-      let inQuotes = false;
-
-      for (let i = 0; i < cleaned.length; i++) {
-        const ch = cleaned[i];
-        const next = cleaned[i + 1];
-
-        if (inQuotes) {
-          if (ch === '"' && next === '"') {
-            cell += '"';
-            i++;
-          } else if (ch === '"') {
-            inQuotes = false;
-          } else {
-            cell += ch;
-          }
-        } else {
-          if (ch === '"') {
-            inQuotes = true;
-          } else if (ch === ",") {
-            row.push(cell.trim());
-            cell = "";
-          } else if (ch === "\n" || ch === "\r") {
-            if (ch === "\r" && next === "\n") i++;
-            row.push(cell.trim());
-            if (row.some((val) => val !== "")) rows.push(row);
-            row = [];
-            cell = "";
-          } else {
-            cell += ch;
-          }
-        }
-      }
-      if (cell.length > 0 || row.length > 0) {
-        row.push(cell.trim());
-        if (row.some((val) => val !== "")) rows.push(row);
-      }
-      return rows;
-    }
-
-    function normalizeHeader(header) {
-      return (header || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    }
-
-    document.getElementById("importBtn").addEventListener("click", () => {
-      document.getElementById("csvFileInput").click();
-    });
-
-    document.getElementById("csvFileInput").addEventListener("change", (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const rows = parseCSV(e.target.result);
-        if (rows.length < 2) {
-          alert("CSV needs a header row and at least one household row.");
-          return;
-        }
-
-        const headers = rows[0].map(normalizeHeader);
-        const findCol = (aliases) => headers.findIndex((h) => aliases.includes(h));
-
-        // Flexible column matching for both 3-column CSVs and full exports
-        let nameIdx = findCol(["residentname", "name", "householdname", "owner", "nama"]);
-        let netCountIdx = findCol(["netcount", "nets", "count", "bednets", "bilangankelambu", "kelambu"]);
-        let netSizeIdx = findCol(["netsize", "size", "saizkelambu", "saiz"]);
-
-        // If headers didn't match standard names but there are 3 columns, assume [Name, Net Count, Net Size]
-        if (nameIdx === -1 && netCountIdx === -1 && netSizeIdx === -1 && rows[0].length >= 3) {
-          nameIdx = 0;
-          netCountIdx = 1;
-          netSizeIdx = 2;
-        }
-
-        const idIdx = findCol(["houseid", "id", "houseno"]);
-        const districtIdx = findCol(["districtvillage", "district", "village", "kampung", "location"]);
-        const latIdx = findCol(["latitude", "lat"]);
-        const lngIdx = findCol(["longitude", "lng", "lon", "long"]);
-        const occIdx = findCol(["occupantcount", "occupants", "people"]);
-        const sprayIdx = findCol(["spraydate", "irsdate"]);
-        const statusIdx = findCol(["status", "programstatus"]);
-        const notesIdx = findCol(["notes", "fieldnotes", "remarks"]);
-
-        // Ask officer for a default Village/District if the CSV doesn't include one
-        let defaultDistrict = "Sabah";
-        if (districtIdx === -1) {
-          const inputVillage = prompt(
-            "Enter Village / District name for this imported list (optional):",
-            "Papar"
-          );
-          if (inputVillage && inputVillage.trim() !== "") {
-            defaultDistrict = inputVillage.trim();
-          }
-        }
-
-        let importedCount = 0;
-
-        for (let i = 1; i < rows.length; i++) {
-          const r = rows[i];
-          const getVal = (idx) => (idx >= 0 && r[idx] !== undefined ? r[idx] : "");
-
-          const residentName = getVal(nameIdx);
-          if (!residentName) continue; // Skip empty rows
-
-          const latNum = parseFloat(getVal(latIdx));
-          const lngNum = parseFloat(getVal(lngIdx));
-          const rawStatus = getVal(statusIdx);
-          const validStatus = STATUS_COLORS[rawStatus] ? rawStatus : "Pending";
-
-          const newHouse = {
-            record_id: DataStore.makeId() + "_" + i,
-            house_id: getVal(idIdx) || `SBH-${String(houses.length + importedCount + 1).padStart(3, "0")}`,
-            resident_name: residentName,
-            district: getVal(districtIdx) || defaultDistrict,
-            lat: Number.isFinite(latNum) ? latNum : null,
-            lng: Number.isFinite(lngNum) ? lngNum : null,
-            net_count: parseInt(getVal(netCountIdx), 10) || 0,
-            net_size: normalizeNetSize(getVal(netSizeIdx)),
-            occupant_count: parseInt(getVal(occIdx), 10) || 0,
-            spray_date: getVal(sprayIdx) || "",
-            status: validStatus,
-            notes: getVal(notesIdx) || "",
-            updated_by: currentUser || "import",
-            updated_at: new Date().toISOString()
-          };
-
-          houses.push(newHouse);
-          importedCount++;
-        }
-
-        DataStore.save(houses);
-        // Automatically filter to "Needs GPS Pin" if imported rows lack coordinates
-        document.getElementById("statusFilter").value = "NEEDS_GPS";
-        renderApp();
-        showToast(`Imported ${importedCount} houses! Tap any house to add its GPS pin.`);
-        event.target.value = "";
-      };
-
-      reader.readAsText(file);
-    });
-
-    function downloadCSVFile(filename, csvText) {
-      const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }
-
-    // Matches your exact 3-column CSV format (Name, Net Count, Net Size)
-    document.getElementById("templateBtn").addEventListener("click", () => {
-      const template = [
-        "Resident Name,Net Count,Net Size",
-        "En. Roslan bin Ali,2,Double",
-        "Pn. Siti Aminah,3,Family",
-        "En. Peter Mojuntin,1,Single"
-      ].join("\n");
-      downloadCSVFile("sabah_3col_template.csv", template);
-    });
-
-    document.getElementById("exportBtn").addEventListener("click", () => {
-      const headers = [
-        "House ID", "Resident Name", "District/Village", "Net Count", "Net Size",
-        "Occupant Count", "Spray Date", "Latitude", "Longitude", "Status",
-        "Notes", "Updated By", "Last Updated"
-      ];
-      const esc = (val) => `"${String(val ?? "").replace(/"/g, '""')}"`;
-
-      const rows = houses.map((h) => [
-        esc(h.house_id),
-        esc(h.resident_name),
-        esc(h.district),
-        h.net_count ?? 0,
-        esc(h.net_size),
-        h.occupant_count ?? 0,
-        esc(h.spray_date),
-        hasValidCoords(h) ? h.lat : "",
-        hasValidCoords(h) ? h.lng : "",
-        esc(h.status),
-        esc(h.notes),
-        esc(h.updated_by),
-        esc(h.updated_at)
-      ]);
-
-      const csvText = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-      downloadCSVFile("sabah_malaria_houses.csv", csvText);
-    });
-
-    /* =========================================================
-       STEP 9: MAP CLICK, GPS & NAVIGATION EVENTS
-       ========================================================= */
-    map.on("click", (event) => {
-      const { lat, lng } = event.latlng;
-      document.getElementById("lat").value = lat.toFixed(5);
-      document.getElementById("lng").value = lng.toFixed(5);
-
-      if (tempClickMarker) map.removeLayer(tempClickMarker);
-      tempClickMarker = L.circleMarker([lat, lng], {
-        radius: 8,
-        color: "#2b6cb0",
-        fillColor: "#63b3ed",
-        fillOpacity: 0.7,
-        dashArray: "4"
-      }).addTo(map);
-
-      showToast("Coordinates picked! Open '+ Add House' to save.");
-    });
-
-    document.getElementById("gpsBtn").addEventListener("click", () => {
-      if (!navigator.geolocation) {
-        alert("GPS is not supported on this browser.");
-        return;
-      }
-
-      showToast("Getting GPS coordinates...");
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          document.getElementById("lat").value = lat.toFixed(5);
-          document.getElementById("lng").value = lng.toFixed(5);
-          map.setView([lat, lng], 16);
-          showToast("GPS coordinates captured!");
-        },
-        () => {
-          alert("Could not get GPS. Please allow location access in your browser settings.");
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    });
-
-    document.getElementById("searchInput").addEventListener("input", renderApp);
-    document.getElementById("statusFilter").addEventListener("change", renderApp);
-    document.getElementById("tabMap").addEventListener("click", () => switchMobileView("map"));
-    document.getElementById("tabForm").addEventListener("click", () => switchMobileView("form"));
-    document.getElementById("tabList").addEventListener("click", () => switchMobileView("list"));
-
-    /* =========================================================
-       STEP 10: OFFLINE MAP TILE SAVER & SERVICE WORKER
-       ========================================================= */
-    function latLngToTile(lat, lng, zoom) {
-      const n = Math.pow(2, zoom);
-      const x = Math.floor(((lng + 180) / 360) * n);
-      const latRad = (lat * Math.PI) / 180;
-      const y = Math.floor(
-        ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n
-      );
-      return { x, y };
-    }
-
-    document.getElementById("cacheMapBtn").addEventListener("click", async () => {
-      const statusBox = document.getElementById("cacheStatus");
-
-      if (!("caches" in window)) {
-        alert("Offline map caching requires opening this app via GitHub Pages (HTTPS) or localhost.");
-        return;
-      }
-      if (!navigator.onLine) {
-        showToast("You are offline. Connect to Wi-Fi/data first to save map tiles.");
-        return;
-      }
-
-      const bounds = map.getBounds();
-      const currentZoom = Math.min(Math.max(map.getZoom(), 8), 16);
-      const zoomLevels = [currentZoom, Math.min(currentZoom + 1, 17)];
-
-      const urlsToCache = [];
-      for (const z of zoomLevels) {
-        const nw = latLngToTile(bounds.getNorth(), bounds.getWest(), z);
-        const se = latLngToTile(bounds.getSouth(), bounds.getEast(), z);
-        const minX = Math.min(nw.x, se.x);
-        const maxX = Math.max(nw.x, se.x);
-        const minY = Math.min(nw.y, se.y);
-        const maxY = Math.max(nw.y, se.y);
-
-        for (let x = minX; x <= maxX; x++) {
-          for (let y = minY; y <= maxY; y++) {
-            if (urlsToCache.length >= MAX_OFFLINE_TILES_PER_TAP) break;
-            const tileUrl = activeTileUrl
-              .replace("{z}", z)
-              .replace("{y}", y)
-              .replace("{x}", x);
-            urlsToCache.push(tileUrl);
-          }
-          if (urlsToCache.length >= MAX_OFFLINE_TILES_PER_TAP) break;
-        }
-      }
-
-      statusBox.style.display = "block";
-      statusBox.textContent = `Saving 0 / ${urlsToCache.length} tiles...`;
-
-      const cache = await caches.open(TILE_CACHE_NAME);
-      let savedCount = 0;
-
-      for (const url of urlsToCache) {
-        try {
-          const existing = await cache.match(url);
-          if (!existing) {
-            const response = await fetch(url, { mode: "no-cors" });
-            await cache.put(url, response);
-          }
-          savedCount++;
-          statusBox.textContent = `Saving ${savedCount} / ${urlsToCache.length} tiles...`;
-        } catch {
-          // Skip individual tile errors silently
-        }
-      }
-
-      statusBox.textContent = `Saved ${savedCount} map tiles for offline use!`;
-      setTimeout(() => { statusBox.style.display = "none"; }, 4000);
-    });
-
-    function updateOnlineStatus() {
-      const badge = document.getElementById("onlineBadge");
-      if (navigator.onLine) {
-        badge.textContent = "Online";
-        badge.classList.remove("offline");
-      } else {
-        badge.textContent = "Offline Mode";
-        badge.classList.add("offline");
-      }
-    }
-    window.addEventListener("online", updateOnlineStatus);
-    window.addEventListener("offline", updateOnlineStatus);
-    updateOnlineStatus();
-
-    if ("serviceWorker" in navigator && location.protocol !== "file:") {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").catch((err) => {
-          console.log("Service Worker registration skipped:", err);
-        });
-      });
-    }
-
-    // Initialize login state and render saved houses
-    updateAuthUI();
-    renderApp();
-  </script>
-</body>
-</html>
+    // Auto-tick "Given Nets" when any net size count goes above 0
+    ["netSingle", "netDouble", "netFamily"].forEach((fieldId) => {
+      document.getElementById(fieldId).addEventListener("input", () => {
+        const total =
+          (parseInt(document.getElementById("netSingle").value, 10) || 0) +
+          (parseInt(document
