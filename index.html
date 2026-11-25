@@ -27,7 +27,8 @@
       --border: #d9e2ec;
       --text: #102a43;
       --muted: #52606d;
-      --header-h: 58px;
+      --header-h: 56px;
+      --gps-bar-h: 34px;
       --nav-h: 60px;
     }
 
@@ -96,7 +97,7 @@
     }
 
     /* =========================================================
-       3. TOP HEADER BAR (INCLUDES SYNC BUTTON)
+       3. TOP HEADER BAR + CLEAN LIVE GPS BANNER
        ========================================================= */
     header {
       height: var(--header-h);
@@ -158,6 +159,67 @@
     .btn-header.has-pending {
       background: var(--warning);
       border-color: #ffffff;
+    }
+
+    /* Clean Live GPS Status Banner: Accuracy (m) + Signal Quality */
+    #gpsBanner {
+      min-height: var(--gps-bar-h);
+      background: #102a43;
+      color: #f0f4f8;
+      padding: 4px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      z-index: 999;
+    }
+
+    .gps-info-group {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .gps-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #9fb3c8;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    .gps-dot.strong { background: #38a169; box-shadow: 0 0 6px #38a169; }
+    .gps-dot.fair   { background: #dd6b20; box-shadow: 0 0 6px #dd6b20; }
+    .gps-dot.weak   { background: #e53e3e; box-shadow: 0 0 6px #e53e3e; }
+
+    .gps-quality-tag {
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: bold;
+      background: #334e68;
+      color: #ffffff;
+    }
+
+    .gps-quality-tag.strong { background: #2f855a; }
+    .gps-quality-tag.fair   { background: #c05621; }
+    .gps-quality-tag.weak   { background: #c53030; }
+
+    .btn-gps-toggle {
+      width: auto;
+      margin: 0;
+      padding: 3px 8px;
+      font-size: 0.68rem;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 5px;
+      color: #ffffff;
+      white-space: nowrap;
     }
 
     /* =========================================================
@@ -253,7 +315,7 @@
     }
 
     /* =========================================================
-       5. CARDS, FORMS, MULTI-NET INPUTS & CHECKBOXES
+       5. CARDS, FORMS, GPS WARNING BOX & CHECKBOXES
        ========================================================= */
     .card {
       background: #ffffff;
@@ -272,6 +334,20 @@
       margin: 0 0 8px 0;
       font-size: 0.8rem;
       color: var(--muted);
+    }
+
+    /* NEW: Gentle inline warning when GPS accuracy exceeds threshold */
+    .gps-warn-box {
+      display: none;
+      margin-top: 8px;
+      padding: 8px 10px;
+      background: #fffbeb;
+      border: 1px solid #f59e0b;
+      border-left: 4px solid #d97706;
+      border-radius: 6px;
+      color: #92400e;
+      font-size: 0.78rem;
+      line-height: 1.4;
     }
 
     label {
@@ -424,7 +500,7 @@
 
     #toast {
       position: fixed;
-      top: calc(var(--header-h) + 10px);
+      top: calc(var(--header-h) + var(--gps-bar-h) + 10px);
       left: 50%;
       transform: translateX(-50%);
       background: #102a43;
@@ -491,7 +567,7 @@
 </head>
 <body class="view-map">
 
-  <!-- LOGIN OVERLAY (REAL SUPABASE AUTH) -->
+  <!-- LOGIN OVERLAY (SUPABASE AUTH) -->
   <div id="loginOverlay">
     <div class="login-box">
       <h1>Sabah Malaria Control</h1>
@@ -541,6 +617,16 @@
     </div>
   </header>
 
+  <!-- CLEAN LIVE GPS STATUS BANNER (Accuracy in meters + Signal Quality) -->
+  <div id="gpsBanner">
+    <div class="gps-info-group">
+      <span id="gpsDot" class="gps-dot"></span>
+      <strong id="gpsAccuracyText">GPS: Searching...</strong>
+      <span id="gpsQualityTag" class="gps-quality-tag">Waiting</span>
+    </div>
+    <button type="button" class="btn-gps-toggle" id="gpsToggleBtn">GPS: ON</button>
+  </div>
+
   <div id="toast"></div>
 
   <!-- MAIN WORKSPACE -->
@@ -585,6 +671,9 @@
           <button type="button" class="btn-gps" id="gpsBtn">
             Use My Current GPS Location
           </button>
+
+          <!-- NEW: Gentle inline GPS accuracy warning -->
+          <div id="gpsWarnBox" class="gps-warn-box"></div>
 
           <!-- MULTIPLE NET SIZES (Single, Double, Family only) -->
           <label>Bed Nets Given by Size (LLIN)</label>
@@ -706,17 +795,19 @@
 
   <script>
     /* =========================================================
-       STEP 1: SUPABASE CONNECTION & APP SETTINGS
-       Paste your Project URL & Publishable Key from Supabase!
-       NEVER paste your Secret (sb_secret_...) key here.
+       STEP 1: SUPABASE CONNECTION & ADJUSTABLE SETTINGS
+       REMEMBER: Paste your own Supabase URL & Publishable Key!
        ========================================================= */
-    const SUPABASE_URL = "https://xfvmqpgyjxqaffswfhnc.supabase.co";
-    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_hbGXUby0VA9XWNa9g7I6EQ_IXTMFLzm";
-
-    // Allows typing just "officer1" at login (auto-appends this domain if no "@" is typed)
+    const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+    const SUPABASE_PUBLISHABLE_KEY = "YOUR_SUPABASE_PUBLISHABLE_KEY";
     const USERNAME_EMAIL_DOMAIN = "sabah-malaria.local";
 
-    // Map & Local Offline Storage settings
+    // GPS Signal & Warning Thresholds (in meters) — easy to adjust!
+    const GPS_STRONG_MAX_METERS = 10;      // 10m or less = Strong (Green)
+    const GPS_FAIR_MAX_METERS = 30;        // 11m to 30m  = Fair (Orange); >30m = Weak (Red)
+    const GPS_WARN_THRESHOLD_METERS = 20;  // Gentle warning if pinning via GPS worse than 20m
+
+    // Map & Local Storage settings
     const SABAH_CENTER = [5.7333, 115.9333]; // Papar, Sabah
     const DEFAULT_ZOOM = 9;
     const STORAGE_KEY = "sabah_malaria_houses_supabase_v1";
@@ -725,27 +816,25 @@
     const TILE_CACHE_NAME = "sabah-malaria-tiles-v1";
     const MAX_OFFLINE_TILES_PER_TAP = 150;
 
-    // Map pin colors (Follow-up keeps top visual priority)
+    // Pin Priority: Follow-up (Orange) stays highest priority
     const PIN_COLORS = {
-      BOTH: "#15803d",      // Dark Green: Sprayed + Nets Given
-      SPRAYED: "#0d9488",   // Teal: Sprayed Only
-      NETS: "#2b6cb0",      // Blue: Nets Given Only
-      FOLLOWUP: "#dd6b20",  // Orange: Follow-up Needed
-      PENDING: "#e53e3e"    // Red: Pending
+      BOTH: "#15803d",
+      SPRAYED: "#0d9488",
+      NETS: "#2b6cb0",
+      FOLLOWUP: "#dd6b20",
+      PENDING: "#e53e3e"
     };
 
     const isSupabaseConfigured =
       SUPABASE_URL.startsWith("https://") &&
       !SUPABASE_PUBLISHABLE_KEY.includes("YOUR_SUPABASE");
 
-    // Create the Supabase client (named sbClient so it doesn't shadow window.supabase)
     const sbClient = isSupabaseConfigured && window.supabase
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
       : null;
 
     /* =========================================================
        STEP 2: LOCAL CACHE & OFFLINE SYNC QUEUE
-       Saves instantly to the phone, then syncs to PostgreSQL!
        ========================================================= */
     function loadJSON(key, fallback) {
       try {
@@ -771,7 +860,7 @@
       return "rec_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
     }
 
-    // Converts JS object into clean PostgreSQL row (empty DATE must be null, never "")
+    // PostgreSQL row mapper (unchanged — no new columns needed in Supabase)
     function toSqlRow(h) {
       return {
         record_id: h.record_id,
@@ -795,7 +884,6 @@
     }
 
     function queueOperation(op) {
-      // Collapse older queued edits for the same house so the queue stays clean
       syncQueue = syncQueue.filter((item) => item.record_id !== op.record_id);
       syncQueue.push(op);
       saveLocalState();
@@ -815,7 +903,6 @@
       }
     }
 
-    // Pushes offline changes to Supabase PostgreSQL, then pulls latest shared team records
     async function syncWithSupabase(showFeedback = false) {
       if (!sbClient || !navigator.onLine || isSyncing || !currentUser) {
         if (showFeedback && !navigator.onLine) {
@@ -828,7 +915,6 @@
       updateSyncButton();
 
       try {
-        // 1. Push any queued upserts (adds/edits) and deletes
         const remainingQueue = [];
         for (const op of syncQueue) {
           if (op.type === "upsert") {
@@ -854,7 +940,6 @@
         syncQueue = remainingQueue;
         saveLocalState();
 
-        // 2. Pull the latest shared team records from PostgreSQL (only if queue is clear)
         if (syncQueue.length === 0) {
           const { data, error } = await sbClient
             .from("houses")
@@ -883,112 +968,7 @@
     }
 
     /* =========================================================
-       STEP 3: SUPABASE AUTHENTICATION (WORKS OFFLINE AFTER LOGIN)
-       ========================================================= */
-    function formatDisplayUser(email) {
-      if (!email) return "Not signed in";
-      const suffix = "@" + USERNAME_EMAIL_DOMAIN;
-      return email.endsWith(suffix) ? email.replace(suffix, "") : email;
-    }
-
-    function setLoggedInState(email) {
-      const overlay = document.getElementById("loginOverlay");
-      const label = document.getElementById("loggedInLabel");
-
-      if (email) {
-        currentUser = formatDisplayUser(email);
-        localStorage.setItem(LAST_USER_KEY, currentUser);
-        overlay.style.display = "none";
-        label.textContent = "Officer: " + currentUser;
-        setTimeout(() => map.invalidateSize(), 150);
-      } else {
-        currentUser = null;
-        localStorage.removeItem(LAST_USER_KEY);
-        overlay.style.display = "flex";
-        label.textContent = "Not signed in";
-      }
-    }
-
-    async function initAuth() {
-      if (!isSupabaseConfigured) {
-        document.getElementById("configWarning").style.display = "block";
-        document.getElementById("loginSubmitBtn").disabled = true;
-        return;
-      }
-
-      try {
-        // getSession() reads the persisted login from localStorage even when offline
-        const { data } = await sbClient.auth.getSession();
-        if (data && data.session && data.session.user) {
-          setLoggedInState(data.session.user.email);
-          syncWithSupabase(false);
-        } else {
-          setLoggedInState(null);
-        }
-      } catch {
-        // Fallback when offline if a previous login was cached
-        if (currentUser) {
-          document.getElementById("loginOverlay").style.display = "none";
-          document.getElementById("loggedInLabel").textContent = "Officer: " + currentUser;
-        }
-      }
-    }
-
-    document.getElementById("loginForm").addEventListener("submit", async (event) => {
-      event.preventDefault();
-      if (!sbClient) return;
-
-      const rawId = document.getElementById("loginIdentifier").value.trim().toLowerCase();
-      const password = document.getElementById("loginPassword").value;
-      const errorBox = document.getElementById("loginError");
-      const btn = document.getElementById("loginSubmitBtn");
-
-      // Convert short usernames like "officer1" into "officer1@sabah-malaria.local"
-      const email = rawId.includes("@") ? rawId : `${rawId}@${USERNAME_EMAIL_DOMAIN}`;
-
-      errorBox.style.display = "none";
-      btn.disabled = true;
-      btn.textContent = "Signing in...";
-
-      try {
-        const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
-        if (error) {
-          errorBox.textContent = error.message || "Invalid username or password.";
-          errorBox.style.display = "block";
-        } else if (data && data.user) {
-          event.target.reset();
-          setLoggedInState(data.user.email);
-          showToast("Signed in! Syncing shared houses...");
-          await syncWithSupabase(true);
-        }
-      } catch {
-        errorBox.textContent = "Network error. Internet is required for first sign-in.";
-        errorBox.style.display = "block";
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Sign In";
-      }
-    });
-
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      if (syncQueue.length > 0) {
-        const proceed = confirm(
-          `You have ${syncQueue.length} unsynced offline change(s). Log out anyway?`
-        );
-        if (!proceed) return;
-      }
-      if (sbClient) {
-        await sbClient.auth.signOut().catch(() => {});
-      }
-      setLoggedInState(null);
-    });
-
-    document.getElementById("syncBtn").addEventListener("click", () => {
-      syncWithSupabase(true);
-    });
-
-    /* =========================================================
-       STEP 4: INITIALIZE ESRI MAP, LAYERS & LEGEND
+       STEP 3: INITIALIZE ESRI MAP, LAYERS & LEGEND
        ========================================================= */
     const ESRI_URLS = {
       street: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
@@ -1035,10 +1015,262 @@
     });
 
     const markerLayer = L.layerGroup().addTo(map);
+    const userGpsLayer = L.layerGroup().addTo(map);
     let tempClickMarker = null;
 
     /* =========================================================
-       STEP 5: HELPER FUNCTIONS (MULTI-NETS & MULTI-STATUS)
+       STEP 4: LIVE GPS BANNER & ACCURACY WARNING TRACKER
+       ========================================================= */
+    let gpsWatchId = null;
+    let gpsEnabledByUser = true;
+    let latestGps = null; // { lat, lng, accuracy, timestamp }
+
+    // Tracks how the current form's coordinates were entered ("gps", "map", "manual", or null)
+    let coordsSource = null;
+    let capturedGpsAccuracy = null;
+
+    function updateGpsWarningUI() {
+      const warnBox = document.getElementById("gpsWarnBox");
+
+      if (
+        coordsSource === "gps" &&
+        typeof capturedGpsAccuracy === "number" &&
+        capturedGpsAccuracy > GPS_WARN_THRESHOLD_METERS
+      ) {
+        const rounded = Math.round(capturedGpsAccuracy);
+        warnBox.innerHTML =
+          `<strong>Low GPS Accuracy (&plusmn;${rounded} m):</strong> ` +
+          `This is above the ${GPS_WARN_THRESHOLD_METERS} m target. ` +
+          `Step into a clearer area and tap <em>Use My Current GPS Location</em> again, or save anyway.`;
+        warnBox.style.display = "block";
+      } else {
+        warnBox.style.display = "none";
+        warnBox.textContent = "";
+      }
+    }
+
+    function setGpsBannerState(text, qualityLabel, qualityClass) {
+      const dot = document.getElementById("gpsDot");
+      const accText = document.getElementById("gpsAccuracyText");
+      const tag = document.getElementById("gpsQualityTag");
+
+      accText.textContent = text;
+      tag.textContent = qualityLabel;
+
+      dot.className = "gps-dot" + (qualityClass ? " " + qualityClass : "");
+      tag.className = "gps-quality-tag" + (qualityClass ? " " + qualityClass : "");
+    }
+
+    function updateLiveUserMarker(lat, lng, accuracy) {
+      userGpsLayer.clearLayers();
+
+      L.circle([lat, lng], {
+        radius: accuracy,
+        color: "#3182ce",
+        fillColor: "#63b3ed",
+        fillOpacity: 0.16,
+        weight: 1
+      }).addTo(userGpsLayer);
+
+      L.circleMarker([lat, lng], {
+        radius: 6,
+        color: "#ffffff",
+        fillColor: "#2563eb",
+        fillOpacity: 1,
+        weight: 2
+      })
+        .bindPopup(`<strong>Your Live GPS</strong><br/>Accuracy: &plusmn;${Math.round(accuracy)} m`)
+        .addTo(userGpsLayer);
+    }
+
+    function startGpsWatch() {
+      if (!navigator.geolocation) {
+        setGpsBannerState("GPS: Unsupported", "N/A", "weak");
+        return;
+      }
+      if (gpsWatchId !== null || !gpsEnabledByUser) return;
+
+      setGpsBannerState("GPS: Searching...", "Acquiring", "");
+
+      gpsWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const accuracy = pos.coords.accuracy;
+
+          latestGps = { lat, lng, accuracy, timestamp: Date.now() };
+
+          const roundedAcc = accuracy < 10 ? accuracy.toFixed(1) : Math.round(accuracy);
+          let qualityLabel = "Weak";
+          let qualityClass = "weak";
+
+          if (accuracy <= GPS_STRONG_MAX_METERS) {
+            qualityLabel = "Strong";
+            qualityClass = "strong";
+          } else if (accuracy <= GPS_FAIR_MAX_METERS) {
+            qualityLabel = "Fair";
+            qualityClass = "fair";
+          }
+
+          setGpsBannerState(`GPS: \u00B1${roundedAcc} m`, qualityLabel, qualityClass);
+          updateLiveUserMarker(lat, lng, accuracy);
+        },
+        (err) => {
+          if (err.code === 1) {
+            setGpsBannerState("GPS: Permission Denied", "Blocked", "weak");
+          } else if (err.code === 2) {
+            setGpsBannerState("GPS: Signal Unavailable", "No Fix", "weak");
+          } else {
+            setGpsBannerState("GPS: Searching...", "Timeout", "fair");
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 5000,
+          timeout: 15000
+        }
+      );
+    }
+
+    function stopGpsWatch(showPausedLabel = true) {
+      if (gpsWatchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
+      if (showPausedLabel) {
+        setGpsBannerState("GPS: Paused", "Off", "");
+        userGpsLayer.clearLayers();
+      }
+    }
+
+    document.getElementById("gpsToggleBtn").addEventListener("click", () => {
+      gpsEnabledByUser = !gpsEnabledByUser;
+      const btn = document.getElementById("gpsToggleBtn");
+      if (gpsEnabledByUser) {
+        btn.textContent = "GPS: ON";
+        startGpsWatch();
+      } else {
+        btn.textContent = "GPS: OFF";
+        stopGpsWatch(true);
+      }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (!currentUser || !gpsEnabledByUser) return;
+      if (document.hidden) {
+        stopGpsWatch(false);
+      } else {
+        startGpsWatch();
+      }
+    });
+
+    /* =========================================================
+       STEP 5: SUPABASE AUTHENTICATION
+       ========================================================= */
+    function formatDisplayUser(email) {
+      if (!email) return "Not signed in";
+      const suffix = "@" + USERNAME_EMAIL_DOMAIN;
+      return email.endsWith(suffix) ? email.replace(suffix, "") : email;
+    }
+
+    function setLoggedInState(email) {
+      const overlay = document.getElementById("loginOverlay");
+      const label = document.getElementById("loggedInLabel");
+
+      if (email) {
+        currentUser = formatDisplayUser(email);
+        localStorage.setItem(LAST_USER_KEY, currentUser);
+        overlay.style.display = "none";
+        label.textContent = "Officer: " + currentUser;
+        setTimeout(() => map.invalidateSize(), 150);
+        startGpsWatch();
+      } else {
+        currentUser = null;
+        localStorage.removeItem(LAST_USER_KEY);
+        overlay.style.display = "flex";
+        label.textContent = "Not signed in";
+        stopGpsWatch(true);
+      }
+    }
+
+    async function initAuth() {
+      if (!isSupabaseConfigured) {
+        document.getElementById("configWarning").style.display = "block";
+        document.getElementById("loginSubmitBtn").disabled = true;
+        return;
+      }
+
+      try {
+        const { data } = await sbClient.auth.getSession();
+        if (data && data.session && data.session.user) {
+          setLoggedInState(data.session.user.email);
+          syncWithSupabase(false);
+        } else {
+          setLoggedInState(null);
+        }
+      } catch {
+        if (currentUser) {
+          document.getElementById("loginOverlay").style.display = "none";
+          document.getElementById("loggedInLabel").textContent = "Officer: " + currentUser;
+          startGpsWatch();
+        }
+      }
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!sbClient) return;
+
+      const rawId = document.getElementById("loginIdentifier").value.trim().toLowerCase();
+      const password = document.getElementById("loginPassword").value;
+      const errorBox = document.getElementById("loginError");
+      const btn = document.getElementById("loginSubmitBtn");
+
+      const email = rawId.includes("@") ? rawId : `${rawId}@${USERNAME_EMAIL_DOMAIN}`;
+
+      errorBox.style.display = "none";
+      btn.disabled = true;
+      btn.textContent = "Signing in...";
+
+      try {
+        const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          errorBox.textContent = error.message || "Invalid username or password.";
+          errorBox.style.display = "block";
+        } else if (data && data.user) {
+          event.target.reset();
+          setLoggedInState(data.user.email);
+          showToast("Signed in! Syncing shared houses...");
+          await syncWithSupabase(true);
+        }
+      } catch {
+        errorBox.textContent = "Network error. Internet is required for first sign-in.";
+        errorBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Sign In";
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      if (syncQueue.length > 0) {
+        const proceed = confirm(
+          `You have ${syncQueue.length} unsynced offline change(s). Log out anyway?`
+        );
+        if (!proceed) return;
+      }
+      if (sbClient) {
+        await sbClient.auth.signOut().catch(() => {});
+      }
+      setLoggedInState(null);
+    });
+
+    document.getElementById("syncBtn").addEventListener("click", () => {
+      syncWithSupabase(true);
+    });
+
+    /* =========================================================
+       STEP 6: HELPER FUNCTIONS (MULTI-NETS & MULTI-STATUS)
        ========================================================= */
     function escapeHtml(text) {
       const div = document.createElement("div");
@@ -1068,7 +1300,6 @@
       return `${parts.join(", ")} (Total: ${getTotalNets(house)})`;
     }
 
-    // Current Pin Priority: Follow-up (Orange) stays highest priority
     function getPinColor(house) {
       if (house.needs_followup) return PIN_COLORS.FOLLOWUP;
       if (house.is_sprayed && house.nets_given) return PIN_COLORS.BOTH;
@@ -1122,7 +1353,7 @@
     }
 
     /* =========================================================
-       STEP 6: RENDER MAP MARKERS & HOUSE LIST
+       STEP 7: RENDER MAP MARKERS & HOUSE LIST
        ========================================================= */
     function createMarker(house) {
       const marker = L.circleMarker([house.lat, house.lng], {
@@ -1243,7 +1474,7 @@
     }
 
     /* =========================================================
-       STEP 7: ADD, EDIT & DELETE (SAVES LOCALLY + QUEUES SYNC)
+       STEP 8: ADD, EDIT & DELETE (WITH GENTLE GPS ACCURACY CHECK)
        ========================================================= */
     document.getElementById("sprayDate").addEventListener("change", (e) => {
       if (e.target.value) document.getElementById("isSprayed").checked = true;
@@ -1259,6 +1490,15 @@
       });
     });
 
+    // If the officer edits Lat/Lng manually, clear the GPS accuracy warning
+    ["lat", "lng"].forEach((fieldId) => {
+      document.getElementById(fieldId).addEventListener("input", () => {
+        coordsSource = "manual";
+        capturedGpsAccuracy = null;
+        updateGpsWarningUI();
+      });
+    });
+
     function resetFormMode() {
       document.getElementById("houseForm").reset();
       document.getElementById("editRecordId").value = "";
@@ -1269,6 +1509,10 @@
       document.getElementById("formTitle").textContent = "Add / Pin a House";
       document.getElementById("submitBtn").textContent = "Save House";
       document.getElementById("cancelEditBtn").style.display = "none";
+
+      coordsSource = null;
+      capturedGpsAccuracy = null;
+      updateGpsWarningUI();
     }
 
     window.startEditHouse = function (recordId) {
@@ -1295,6 +1539,11 @@
       document.getElementById("submitBtn").textContent = "Update House Record";
       document.getElementById("cancelEditBtn").style.display = "block";
 
+      // Reset GPS warning state when opening an existing record
+      coordsSource = "existing";
+      capturedGpsAccuracy = null;
+      updateGpsWarningUI();
+
       switchMobileView("form");
     };
 
@@ -1317,6 +1566,23 @@
       const lngRaw = document.getElementById("lng").value.trim();
       const parsedLat = latRaw === "" ? null : parseFloat(latRaw);
       const parsedLng = lngRaw === "" ? null : parseFloat(lngRaw);
+
+      // Gentle pre-save warning ONLY when coordinates came from low-accuracy GPS
+      if (
+        Number.isFinite(parsedLat) &&
+        Number.isFinite(parsedLng) &&
+        coordsSource === "gps" &&
+        typeof capturedGpsAccuracy === "number" &&
+        capturedGpsAccuracy > GPS_WARN_THRESHOLD_METERS
+      ) {
+        const roundedAcc = Math.round(capturedGpsAccuracy);
+        const saveAnyway = confirm(
+          `Heads up: Your captured GPS accuracy is \u00B1${roundedAcc} m ` +
+          `(above the ${GPS_WARN_THRESHOLD_METERS} m target).\n\n` +
+          `Click OK to save this house anyway, or Cancel to wait a few seconds for a stronger GPS lock.`
+        );
+        if (!saveAnyway) return;
+      }
 
       const houseData = {
         record_id: editId || makeRecordId(),
@@ -1369,7 +1635,7 @@
     });
 
     /* =========================================================
-       STEP 8: CSV IMPORT (AUTO-MERGES SEPARATE ROWS PER NAME)
+       STEP 9: CSV IMPORT (AUTO-MERGES SEPARATE ROWS PER NAME)
        ========================================================= */
     function parseCSV(text) {
       const cleaned = text.replace(/^\uFEFF/, "");
@@ -1441,7 +1707,6 @@
         const doubleIdx = findCol(["doublenets", "netdouble", "double"]);
         const familyIdx = findCol(["familynets", "netfamily", "family"]);
 
-        // Default to columns 0, 1, 2 for standard 3-column CSVs
         if (nameIdx === -1 && netCountIdx === -1 && singleIdx === -1 && rows[0].length >= 3) {
           nameIdx = 0;
           netCountIdx = 1;
@@ -1493,7 +1758,6 @@
             else if (sizeKey === "net_family") netFamily += countVal;
           }
 
-          // Automatically combine separate net-size rows belonging to the same resident name
           const nameKey = residentName.trim().toLowerCase();
           if (batchByName[nameKey]) {
             const existing = batchByName[nameKey];
@@ -1534,7 +1798,6 @@
           batchByName[nameKey] = newHouse;
         }
 
-        // Save locally and queue every imported house for Supabase sync
         importedBatch.forEach((h) => {
           houses.unshift(h);
           queueOperation({ type: "upsert", record_id: h.record_id, record: h });
@@ -1610,12 +1873,17 @@
     });
 
     /* =========================================================
-       STEP 9: MAP CLICK, GPS & MOBILE NAVIGATION EVENTS
+       STEP 10: MAP CLICK, GPS CAPTURE & MOBILE TABS
        ========================================================= */
     map.on("click", (event) => {
       const { lat, lng } = event.latlng;
       document.getElementById("lat").value = lat.toFixed(5);
       document.getElementById("lng").value = lng.toFixed(5);
+
+      // Map-tapped pins do not trigger the GPS accuracy warning
+      coordsSource = "map";
+      capturedGpsAccuracy = null;
+      updateGpsWarningUI();
 
       if (tempClickMarker) map.removeLayer(tempClickMarker);
       tempClickMarker = L.circleMarker([lat, lng], {
@@ -1626,8 +1894,26 @@
         dashArray: "4"
       }).addTo(map);
 
-      showToast("Coordinates picked! Open '+ Add House' to save.");
+      showToast("Coordinates picked from map! Open '+ Add House' to save.");
     });
+
+    function applyCapturedGps(lat, lng, accuracy) {
+      document.getElementById("lat").value = lat.toFixed(5);
+      document.getElementById("lng").value = lng.toFixed(5);
+      coordsSource = "gps";
+      capturedGpsAccuracy = accuracy;
+      updateGpsWarningUI();
+
+      map.setView([lat, lng], 16);
+      updateLiveUserMarker(lat, lng, accuracy);
+
+      const roundedAcc = Math.round(accuracy);
+      if (accuracy > GPS_WARN_THRESHOLD_METERS) {
+        showToast(`GPS captured (\u00B1${roundedAcc} m) — low accuracy warning shown.`);
+      } else {
+        showToast(`GPS captured (\u00B1${roundedAcc} m)!`);
+      }
+    }
 
     document.getElementById("gpsBtn").addEventListener("click", () => {
       if (!navigator.geolocation) {
@@ -1635,15 +1921,16 @@
         return;
       }
 
+      // Reuse live banner GPS if fresher than 10 seconds
+      if (latestGps && (Date.now() - latestGps.timestamp) < 10000) {
+        applyCapturedGps(latestGps.lat, latestGps.lng, latestGps.accuracy);
+        return;
+      }
+
       showToast("Getting GPS coordinates...");
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          document.getElementById("lat").value = lat.toFixed(5);
-          document.getElementById("lng").value = lng.toFixed(5);
-          map.setView([lat, lng], 16);
-          showToast("GPS coordinates captured!");
+          applyCapturedGps(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
         },
         () => {
           alert("Could not get GPS. Please allow location access in your browser settings.");
@@ -1659,7 +1946,7 @@
     document.getElementById("tabList").addEventListener("click", () => switchMobileView("list"));
 
     /* =========================================================
-       STEP 10: OFFLINE MAP TILE SAVER, ONLINE MONITOR & SW
+       STEP 11: OFFLINE MAP TILE SAVER, ONLINE MONITOR & SW
        ========================================================= */
     function latLngToTile(lat, lng, zoom) {
       const n = Math.pow(2, zoom);
@@ -1738,7 +2025,6 @@
       if (navigator.onLine) {
         badge.textContent = "Online";
         badge.classList.remove("offline");
-        // Auto-sync queued offline changes as soon as signal returns!
         if (syncQueue.length > 0 && currentUser) {
           syncWithSupabase(true);
         }
@@ -1759,7 +2045,6 @@
       });
     }
 
-    // Start the app
     updateSyncButton();
     renderApp();
     initAuth();
