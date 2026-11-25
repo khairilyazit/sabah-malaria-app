@@ -1,8 +1,8 @@
 /* =========================================================
-   SERVICE WORKER (v4): Offline Support for GitHub Pages
+   SERVICE WORKER (v5): Offline Support + Supabase Pass-Through
    ========================================================= */
 
-const APP_CACHE = "sabah-malaria-app-v4";
+const APP_CACHE = "sabah-malaria-app-v5";
 const TILE_CACHE = "sabah-malaria-tiles-v1";
 
 const APP_FILES = [
@@ -10,7 +10,8 @@ const APP_FILES = [
   "./index.html",
   "./manifest.json",
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css",
-  "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+  "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js",
+  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ];
 
 self.addEventListener("install", (event) => {
@@ -36,6 +37,12 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = event.request.url;
 
+  // Never intercept live Supabase API or Auth calls
+  if (url.includes(".supabase.co")) {
+    return;
+  }
+
+  // Esri Map Tiles -> Cache first, then network
   if (url.includes("server.arcgisonline.com")) {
     event.respondWith(
       caches.open(TILE_CACHE).then(async (cache) => {
@@ -56,6 +63,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // App files -> Network first, fall back to cache when offline
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
