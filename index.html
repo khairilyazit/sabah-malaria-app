@@ -14,7 +14,7 @@
 
   <style>
     /* =========================================================
-       1. BASE STYLES & THEME VARIABLES (Safe to customize)
+       1. BASE STYLES & THEME VARIABLES
        ========================================================= */
     :root {
       --primary: #1b4332;
@@ -27,7 +27,7 @@
       --border: #d9e2ec;
       --text: #102a43;
       --muted: #52606d;
-      --header-h: 56px;
+      --header-h: 58px;
       --nav-h: 60px;
     }
 
@@ -47,7 +47,7 @@
     }
 
     /* =========================================================
-       2. LOGIN SCREEN OVERLAY
+       2. LOGIN SCREEN OVERLAY (SUPABASE AUTH)
        ========================================================= */
     #loginOverlay {
       position: fixed;
@@ -63,7 +63,7 @@
     .login-box {
       background: #ffffff;
       width: 100%;
-      max-width: 380px;
+      max-width: 390px;
       border-radius: 12px;
       padding: 24px;
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
@@ -83,18 +83,20 @@
       font-weight: 600;
     }
 
-    .demo-note {
-      margin-top: 12px;
-      padding: 8px 10px;
-      background: #edf2f7;
+    .config-warning {
+      background: #fefcbf;
+      border: 1px solid #d69e2e;
+      color: #744210;
+      padding: 10px;
       border-radius: 6px;
-      font-size: 0.75rem;
-      color: #4a5568;
+      font-size: 0.78rem;
+      margin-top: 10px;
+      display: none;
       line-height: 1.4;
     }
 
     /* =========================================================
-       3. TOP HEADER BAR
+       3. TOP HEADER BAR (INCLUDES SYNC BUTTON)
        ========================================================= */
     header {
       height: var(--header-h);
@@ -104,33 +106,33 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      gap: 6px;
       flex-shrink: 0;
       z-index: 1000;
     }
 
     header h1 {
       margin: 0;
-      font-size: 1rem;
+      font-size: 0.96rem;
       line-height: 1.2;
     }
 
     header small {
       display: block;
-      font-size: 0.7rem;
-      opacity: 0.85;
+      font-size: 0.68rem;
+      opacity: 0.88;
     }
 
     .header-right {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
 
     .status-pill {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: bold;
-      padding: 4px 9px;
+      padding: 4px 8px;
       border-radius: 999px;
       background: #2f855a;
       color: #ffffff;
@@ -141,15 +143,21 @@
       background: var(--warning);
     }
 
-    .btn-logout {
+    .btn-header {
       width: auto;
       margin: 0;
-      padding: 5px 10px;
-      font-size: 0.74rem;
+      padding: 5px 9px;
+      font-size: 0.72rem;
       background: rgba(255, 255, 255, 0.18);
       border: 1px solid rgba(255, 255, 255, 0.4);
       border-radius: 6px;
       color: #ffffff;
+      white-space: nowrap;
+    }
+
+    .btn-header.has-pending {
+      background: var(--warning);
+      border-color: #ffffff;
     }
 
     /* =========================================================
@@ -219,7 +227,6 @@
       box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     }
 
-    /* Compact Leaflet map legend */
     .map-legend {
       background: rgba(255, 255, 255, 0.94);
       padding: 8px 10px;
@@ -293,8 +300,9 @@
       margin-top: 10px;
     }
 
-    button:active {
-      opacity: 0.85;
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .btn-gps { background: var(--accent); }
@@ -311,7 +319,6 @@
       flex: 1;
     }
 
-    /* 3-column grid for Single, Double, and Family net counts */
     .three-col {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -334,7 +341,6 @@
       padding: 8px 4px;
     }
 
-    /* Touch-friendly multi-status checkbox cards */
     .status-group {
       display: flex;
       flex-direction: column;
@@ -384,13 +390,8 @@
       cursor: pointer;
     }
 
-    .house-item:last-child {
-      border-bottom: none;
-    }
-
-    .house-item:hover {
-      background: #f0f4f8;
-    }
+    .house-item:last-child { border-bottom: none; }
+    .house-item:hover { background: #f0f4f8; }
 
     .house-meta {
       font-size: 0.78rem;
@@ -490,28 +491,40 @@
 </head>
 <body class="view-map">
 
-  <!-- LOGIN OVERLAY -->
+  <!-- LOGIN OVERLAY (REAL SUPABASE AUTH) -->
   <div id="loginOverlay">
     <div class="login-box">
       <h1>Sabah Malaria Control</h1>
-      <p class="helper-text">Sign in to access the House Locator</p>
+      <p class="helper-text">Sign in with your Supabase team account</p>
+
+      <div class="config-warning" id="configWarning">
+        <strong>Setup Required:</strong> Open <code>index.html</code> and paste your
+        <strong>SUPABASE_URL</strong> and <strong>SUPABASE_PUBLISHABLE_KEY</strong>
+        in Step 1 of the script, then upload to GitHub Pages.
+      </div>
 
       <form id="loginForm">
-        <label for="loginUsername">Username</label>
-        <input type="text" id="loginUsername" autocomplete="username" placeholder="e.g., officer1" required />
+        <label for="loginIdentifier">Username or Email</label>
+        <input
+          type="text"
+          id="loginIdentifier"
+          autocomplete="username"
+          placeholder="e.g., officer1 or officer1@sabah.gov.my"
+          required
+        />
 
         <label for="loginPassword">Password</label>
-        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="Enter password" required />
+        <input
+          type="password"
+          id="loginPassword"
+          autocomplete="current-password"
+          placeholder="Enter password"
+          required
+        />
 
-        <div class="login-error" id="loginError">Invalid username or password.</div>
-        <button type="submit">Sign In</button>
+        <div class="login-error" id="loginError"></div>
+        <button type="submit" id="loginSubmitBtn">Sign In</button>
       </form>
-
-      <div class="demo-note">
-        <strong>Testing Accounts (On-Device Phase):</strong><br/>
-        Username: <code>officer1</code> | Password: <code>sabah2026</code><br/>
-        Username: <code>admin</code> | Password: <code>malaria2026</code>
-      </div>
     </div>
   </div>
 
@@ -522,8 +535,9 @@
       <small id="loggedInLabel">Not signed in</small>
     </div>
     <div class="header-right">
+      <button type="button" class="btn-header" id="syncBtn">Sync</button>
       <span id="onlineBadge" class="status-pill">Online</span>
-      <button type="button" class="btn-logout" id="logoutBtn">Logout</button>
+      <button type="button" class="btn-header" id="logoutBtn">Logout</button>
     </div>
   </header>
 
@@ -538,7 +552,7 @@
       <!-- PANEL A: ADD / EDIT HOUSE FORM -->
       <section class="card" id="formPanel">
         <h2 id="formTitle">Add / Pin a House</h2>
-        <p class="helper-text">Tap the map or use GPS to pin. Coordinates can be added later.</p>
+        <p class="helper-text">Works offline! Changes sync to PostgreSQL when online.</p>
 
         <form id="houseForm">
           <input type="hidden" id="editRecordId" value="" />
@@ -572,7 +586,7 @@
             Use My Current GPS Location
           </button>
 
-          <!-- MULTIPLE NET SIZES PER HOUSE -->
+          <!-- MULTIPLE NET SIZES (Single, Double, Family only) -->
           <label>Bed Nets Given by Size (LLIN)</label>
           <div class="three-col">
             <div>
@@ -589,7 +603,6 @@
             </div>
           </div>
 
-          <!-- OCCUPANT COUNT & SPRAY DATE -->
           <div class="two-col">
             <div>
               <label for="occupants">Occupant Count</label>
@@ -601,7 +614,7 @@
             </div>
           </div>
 
-          <!-- MULTI-SELECT CONTROL PROGRAM STATUS -->
+          <!-- COMBINED CONTROL PROGRAM STATUS -->
           <label>Control Program Status (Tick all that apply)</label>
           <div class="status-group">
             <label class="check-card">
@@ -687,28 +700,32 @@
     </button>
   </nav>
 
-  <!-- Load Leaflet 1.9.4 JS -->
+  <!-- Load Leaflet 1.9.4 + Supabase JS v2 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <script>
     /* =========================================================
-       STEP 1: ADJUSTABLE SETTINGS & PIN COLORS
+       STEP 1: SUPABASE CONNECTION & APP SETTINGS
+       Paste your Project URL & Publishable Key from Supabase!
+       NEVER paste your Secret (sb_secret_...) key here.
        ========================================================= */
+    const SUPABASE_URL = "YOUR_SUPABASE_PROJECT_URL";
+    const SUPABASE_PUBLISHABLE_KEY = "YOUR_SUPABASE_PUBLISHABLE_KEY";
+
+    // Allows typing just "officer1" at login (auto-appends this domain if no "@" is typed)
+    const USERNAME_EMAIL_DOMAIN = "sabah-malaria.local";
+
+    // Map & Local Offline Storage settings
     const SABAH_CENTER = [5.7333, 115.9333]; // Papar, Sabah
     const DEFAULT_ZOOM = 9;
-    const STORAGE_KEY = "sabah_malaria_houses_sql_v6";
-    const AUTH_SESSION_KEY = "sabah_malaria_logged_user";
+    const STORAGE_KEY = "sabah_malaria_houses_supabase_v1";
+    const SYNC_QUEUE_KEY = "sabah_malaria_sync_queue_v1";
+    const LAST_USER_KEY = "sabah_malaria_last_user";
     const TILE_CACHE_NAME = "sabah-malaria-tiles-v1";
     const MAX_OFFLINE_TILES_PER_TAP = 150;
 
-    // Temporary demo accounts until we connect your SQL server
-    const DEMO_USERS = {
-      "officer1": "sabah2026",
-      "officer2": "sabah2026",
-      "admin": "malaria2026"
-    };
-
-    // Map marker colors for each combined status
+    // Map pin colors (Follow-up keeps top visual priority)
     const PIN_COLORS = {
       BOTH: "#15803d",      // Dark Green: Sprayed + Nets Given
       SPRAYED: "#0d9488",   // Teal: Sprayed Only
@@ -717,132 +734,258 @@
       PENDING: "#e53e3e"    // Red: Pending
     };
 
-    // Starter sample houses showing combined status & multiple net sizes
-    const SAMPLE_HOUSES = [
-      {
-        record_id: "rec_sample_1",
-        house_id: "SBH-001",
-        resident_name: "En. Jamil bin Osman",
-        district: "Kg. Limbahau, Papar",
-        lat: 5.7333,
-        lng: 115.9333,
-        net_single: 1,
-        net_double: 2,
-        net_family: 1,
-        occupant_count: 6,
-        spray_date: "2026-11-10",
-        is_sprayed: true,
-        nets_given: true,
-        needs_followup: false,
-        notes: "Sprayed and issued mixed net sizes.",
-        updated_by: "officer1",
-        updated_at: new Date().toISOString()
-      },
-      {
-        record_id: "rec_sample_2",
-        house_id: "SBH-002",
-        resident_name: "Pn. Maria Thomas",
-        district: "Keningau",
-        lat: 5.3378,
-        lng: 116.1602,
-        net_single: 0,
-        net_double: 2,
-        net_family: 0,
-        occupant_count: 4,
-        spray_date: "",
-        is_sprayed: false,
-        nets_given: true,
-        needs_followup: true,
-        notes: "Nets issued; return to spray house next week.",
-        updated_by: "officer1",
-        updated_at: new Date().toISOString()
-      },
-      {
-        record_id: "rec_sample_3",
-        house_id: "SBH-003",
-        resident_name: "En. Linus G.",
-        district: "Ranau",
-        lat: null,
-        lng: null,
-        net_single: 1,
-        net_double: 0,
-        net_family: 1,
-        occupant_count: 5,
-        spray_date: "",
-        is_sprayed: false,
-        nets_given: false,
-        needs_followup: false,
-        notes: "Imported from CSV - needs GPS pin in field.",
-        updated_by: "admin",
-        updated_at: new Date().toISOString()
-      }
-    ];
+    const isSupabaseConfigured =
+      SUPABASE_URL.startsWith("https://") &&
+      !SUPABASE_PUBLISHABLE_KEY.includes("YOUR_SUPABASE");
+
+    // Create the Supabase client (named sbClient so it doesn't shadow window.supabase)
+    const sbClient = isSupabaseConfigured && window.supabase
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+      : null;
 
     /* =========================================================
-       STEP 2: LOGIN SESSION LOGIC
+       STEP 2: LOCAL CACHE & OFFLINE SYNC QUEUE
+       Saves instantly to the phone, then syncs to PostgreSQL!
        ========================================================= */
-    let currentUser = localStorage.getItem(AUTH_SESSION_KEY) || null;
+    function loadJSON(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
 
-    function updateAuthUI() {
+    let houses = loadJSON(STORAGE_KEY, []);
+    let syncQueue = loadJSON(SYNC_QUEUE_KEY, []);
+    let currentUser = localStorage.getItem(LAST_USER_KEY) || null;
+    let isSyncing = false;
+
+    function saveLocalState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(houses));
+      localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(syncQueue));
+      updateSyncButton();
+    }
+
+    function makeRecordId() {
+      return "rec_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+    }
+
+    // Converts JS object into clean PostgreSQL row (empty DATE must be null, never "")
+    function toSqlRow(h) {
+      return {
+        record_id: h.record_id,
+        house_id: h.house_id,
+        resident_name: h.resident_name,
+        district: h.district || "Sabah",
+        lat: hasValidCoords(h) ? h.lat : null,
+        lng: hasValidCoords(h) ? h.lng : null,
+        net_single: Math.max(0, parseInt(h.net_single, 10) || 0),
+        net_double: Math.max(0, parseInt(h.net_double, 10) || 0),
+        net_family: Math.max(0, parseInt(h.net_family, 10) || 0),
+        occupant_count: Math.max(0, parseInt(h.occupant_count, 10) || 0),
+        spray_date: h.spray_date && h.spray_date.trim() !== "" ? h.spray_date : null,
+        is_sprayed: Boolean(h.is_sprayed),
+        nets_given: Boolean(h.nets_given),
+        needs_followup: Boolean(h.needs_followup),
+        notes: h.notes || "",
+        updated_by: h.updated_by || currentUser || "unknown",
+        updated_at: h.updated_at || new Date().toISOString()
+      };
+    }
+
+    function queueOperation(op) {
+      // Collapse older queued edits for the same house so the queue stays clean
+      syncQueue = syncQueue.filter((item) => item.record_id !== op.record_id);
+      syncQueue.push(op);
+      saveLocalState();
+    }
+
+    function updateSyncButton() {
+      const btn = document.getElementById("syncBtn");
+      if (isSyncing) {
+        btn.textContent = "Syncing...";
+        btn.classList.remove("has-pending");
+      } else if (syncQueue.length > 0) {
+        btn.textContent = `Sync (${syncQueue.length})`;
+        btn.classList.add("has-pending");
+      } else {
+        btn.textContent = "Sync";
+        btn.classList.remove("has-pending");
+      }
+    }
+
+    // Pushes offline changes to Supabase PostgreSQL, then pulls latest shared team records
+    async function syncWithSupabase(showFeedback = false) {
+      if (!sbClient || !navigator.onLine || isSyncing || !currentUser) {
+        if (showFeedback && !navigator.onLine) {
+          showToast("Offline: changes are safely saved on your phone.");
+        }
+        return;
+      }
+
+      isSyncing = true;
+      updateSyncButton();
+
+      try {
+        // 1. Push any queued upserts (adds/edits) and deletes
+        const remainingQueue = [];
+        for (const op of syncQueue) {
+          if (op.type === "upsert") {
+            const { error } = await sbClient
+              .from("houses")
+              .upsert(toSqlRow(op.record), { onConflict: "record_id" });
+            if (error) {
+              console.error("Upsert sync error:", error);
+              remainingQueue.push(op);
+            }
+          } else if (op.type === "delete") {
+            const { error } = await sbClient
+              .from("houses")
+              .delete()
+              .eq("record_id", op.record_id);
+            if (error) {
+              console.error("Delete sync error:", error);
+              remainingQueue.push(op);
+            }
+          }
+        }
+
+        syncQueue = remainingQueue;
+        saveLocalState();
+
+        // 2. Pull the latest shared team records from PostgreSQL (only if queue is clear)
+        if (syncQueue.length === 0) {
+          const { data, error } = await sbClient
+            .from("houses")
+            .select("*")
+            .order("updated_at", { ascending: false });
+
+          if (error) {
+            console.error("Fetch error:", error);
+            if (showFeedback) showToast("Sync error: " + error.message);
+          } else if (Array.isArray(data)) {
+            houses = data;
+            saveLocalState();
+            renderApp();
+            if (showFeedback) showToast(`Synced! ${houses.length} shared house(s) loaded.`);
+          }
+        } else if (showFeedback) {
+          showToast(`Some changes could not sync (${syncQueue.length} pending).`);
+        }
+      } catch (err) {
+        console.error("Sync failed:", err);
+        if (showFeedback) showToast("Could not reach Supabase right now.");
+      } finally {
+        isSyncing = false;
+        updateSyncButton();
+      }
+    }
+
+    /* =========================================================
+       STEP 3: SUPABASE AUTHENTICATION (WORKS OFFLINE AFTER LOGIN)
+       ========================================================= */
+    function formatDisplayUser(email) {
+      if (!email) return "Not signed in";
+      const suffix = "@" + USERNAME_EMAIL_DOMAIN;
+      return email.endsWith(suffix) ? email.replace(suffix, "") : email;
+    }
+
+    function setLoggedInState(email) {
       const overlay = document.getElementById("loginOverlay");
       const label = document.getElementById("loggedInLabel");
 
-      if (currentUser) {
+      if (email) {
+        currentUser = formatDisplayUser(email);
+        localStorage.setItem(LAST_USER_KEY, currentUser);
         overlay.style.display = "none";
         label.textContent = "Officer: " + currentUser;
         setTimeout(() => map.invalidateSize(), 150);
       } else {
+        currentUser = null;
+        localStorage.removeItem(LAST_USER_KEY);
         overlay.style.display = "flex";
         label.textContent = "Not signed in";
       }
     }
 
-    document.getElementById("loginForm").addEventListener("submit", (event) => {
+    async function initAuth() {
+      if (!isSupabaseConfigured) {
+        document.getElementById("configWarning").style.display = "block";
+        document.getElementById("loginSubmitBtn").disabled = true;
+        return;
+      }
+
+      try {
+        // getSession() reads the persisted login from localStorage even when offline
+        const { data } = await sbClient.auth.getSession();
+        if (data && data.session && data.session.user) {
+          setLoggedInState(data.session.user.email);
+          syncWithSupabase(false);
+        } else {
+          setLoggedInState(null);
+        }
+      } catch {
+        // Fallback when offline if a previous login was cached
+        if (currentUser) {
+          document.getElementById("loginOverlay").style.display = "none";
+          document.getElementById("loggedInLabel").textContent = "Officer: " + currentUser;
+        }
+      }
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", async (event) => {
       event.preventDefault();
-      const username = document.getElementById("loginUsername").value.trim().toLowerCase();
+      if (!sbClient) return;
+
+      const rawId = document.getElementById("loginIdentifier").value.trim().toLowerCase();
       const password = document.getElementById("loginPassword").value;
       const errorBox = document.getElementById("loginError");
+      const btn = document.getElementById("loginSubmitBtn");
 
-      if (DEMO_USERS[username] && DEMO_USERS[username] === password) {
-        currentUser = username;
-        localStorage.setItem(AUTH_SESSION_KEY, currentUser);
-        errorBox.style.display = "none";
-        event.target.reset();
-        updateAuthUI();
-        showToast("Welcome, " + currentUser + "!");
-      } else {
-        errorBox.style.display = "block";
-      }
-    });
+      // Convert short usernames like "officer1" into "officer1@sabah-malaria.local"
+      const email = rawId.includes("@") ? rawId : `${rawId}@${USERNAME_EMAIL_DOMAIN}`;
 
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      currentUser = null;
-      localStorage.removeItem(AUTH_SESSION_KEY);
-      updateAuthUI();
-    });
+      errorBox.style.display = "none";
+      btn.disabled = true;
+      btn.textContent = "Signing in...";
 
-    /* =========================================================
-       STEP 3: ON-DEVICE DATA STORE (SQL-READY STRUCTURE)
-       ========================================================= */
-    const DataStore = {
-      load() {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return SAMPLE_HOUSES;
-        try {
-          return JSON.parse(raw);
-        } catch {
-          return SAMPLE_HOUSES;
+      try {
+        const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          errorBox.textContent = error.message || "Invalid username or password.";
+          errorBox.style.display = "block";
+        } else if (data && data.user) {
+          event.target.reset();
+          setLoggedInState(data.user.email);
+          showToast("Signed in! Syncing shared houses...");
+          await syncWithSupabase(true);
         }
-      },
-      save(records) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-      },
-      makeId() {
-        return "rec_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+      } catch {
+        errorBox.textContent = "Network error. Internet is required for first sign-in.";
+        errorBox.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Sign In";
       }
-    };
+    });
 
-    let houses = DataStore.load();
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      if (syncQueue.length > 0) {
+        const proceed = confirm(
+          `You have ${syncQueue.length} unsynced offline change(s). Log out anyway?`
+        );
+        if (!proceed) return;
+      }
+      if (sbClient) {
+        await sbClient.auth.signOut().catch(() => {});
+      }
+      setLoggedInState(null);
+    });
+
+    document.getElementById("syncBtn").addEventListener("click", () => {
+      syncWithSupabase(true);
+    });
 
     /* =========================================================
        STEP 4: INITIALIZE ESRI MAP, LAYERS & LEGEND
@@ -871,7 +1014,6 @@
       "Topographic": topoMap
     }).addTo(map);
 
-    // Add a compact color legend in the bottom-right corner
     const legend = L.control({ position: "bottomright" });
     legend.onAdd = function () {
       const div = L.DomUtil.create("div", "map-legend");
@@ -917,7 +1059,6 @@
       return (house.net_single || 0) + (house.net_double || 0) + (house.net_family || 0);
     }
 
-    // Formats mixed net sizes cleanly (e.g., "1 Single, 2 Double (Total: 3)")
     function formatNetsSummary(house) {
       const parts = [];
       if (house.net_single > 0) parts.push(`${house.net_single} Single`);
@@ -927,7 +1068,7 @@
       return `${parts.join(", ")} (Total: ${getTotalNets(house)})`;
     }
 
-    // Determines the map pin color (Follow-up takes top visual priority so it's not missed)
+    // Current Pin Priority: Follow-up (Orange) stays highest priority
     function getPinColor(house) {
       if (house.needs_followup) return PIN_COLORS.FOLLOWUP;
       if (house.is_sprayed && house.nets_given) return PIN_COLORS.BOTH;
@@ -936,7 +1077,6 @@
       return PIN_COLORS.PENDING;
     }
 
-    // Builds HTML badges showing EVERY active status on a house
     function buildStatusBadges(house, includeGpsBadge = false) {
       const badges = [];
       if (house.is_sprayed) badges.push(`<span class="badge badge-sprayed">Sprayed</span>`);
@@ -967,7 +1107,7 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => {
         toast.style.display = "none";
-      }, 3200);
+      }, 3400);
     }
 
     function switchMobileView(viewName) {
@@ -1053,7 +1193,7 @@
       document.getElementById("mobileHouseCount").textContent = houses.length;
 
       if (filtered.length === 0) {
-        houseListEl.innerHTML = `<p class="helper-text">No matching houses found.</p>`;
+        houseListEl.innerHTML = `<p class="helper-text">No houses yet. Add a house or import a CSV.</p>`;
         return;
       }
 
@@ -1103,26 +1243,19 @@
     }
 
     /* =========================================================
-       STEP 7: FORM SMART SHORTCUTS + ADD / EDIT / DELETE
+       STEP 7: ADD, EDIT & DELETE (SAVES LOCALLY + QUEUES SYNC)
        ========================================================= */
-
-    // Auto-tick "Sprayed" when an officer picks a spray date
     document.getElementById("sprayDate").addEventListener("change", (e) => {
-      if (e.target.value) {
-        document.getElementById("isSprayed").checked = true;
-      }
+      if (e.target.value) document.getElementById("isSprayed").checked = true;
     });
 
-    // Auto-tick "Given Nets" when any net size count goes above 0
     ["netSingle", "netDouble", "netFamily"].forEach((fieldId) => {
       document.getElementById(fieldId).addEventListener("input", () => {
         const total =
           (parseInt(document.getElementById("netSingle").value, 10) || 0) +
           (parseInt(document.getElementById("netDouble").value, 10) || 0) +
           (parseInt(document.getElementById("netFamily").value, 10) || 0);
-        if (total > 0) {
-          document.getElementById("netsGiven").checked = true;
-        }
+        if (total > 0) document.getElementById("netsGiven").checked = true;
       });
     });
 
@@ -1166,11 +1299,12 @@
     };
 
     window.deleteHouse = function (recordId) {
-      if (!confirm("Delete this house record from this device?")) return;
+      if (!confirm("Delete this house record for the whole team?")) return;
       houses = houses.filter((h) => h.record_id !== recordId);
-      DataStore.save(houses);
+      queueOperation({ type: "delete", record_id: recordId });
       renderApp();
-      showToast("House deleted.");
+      showToast(navigator.onLine ? "Deleted and syncing..." : "Deleted locally (will sync when online).");
+      syncWithSupabase(false);
     };
 
     document.getElementById("cancelEditBtn").addEventListener("click", resetFormMode);
@@ -1185,7 +1319,7 @@
       const parsedLng = lngRaw === "" ? null : parseFloat(lngRaw);
 
       const houseData = {
-        record_id: editId || DataStore.makeId(),
+        record_id: editId || makeRecordId(),
         house_id: document.getElementById("houseId").value.trim(),
         resident_name: document.getElementById("residentName").value.trim(),
         district: document.getElementById("district").value.trim(),
@@ -1195,7 +1329,7 @@
         net_double: Math.max(0, parseInt(document.getElementById("netDouble").value, 10) || 0),
         net_family: Math.max(0, parseInt(document.getElementById("netFamily").value, 10) || 0),
         occupant_count: Math.max(0, parseInt(document.getElementById("occupants").value, 10) || 0),
-        spray_date: document.getElementById("sprayDate").value,
+        spray_date: document.getElementById("sprayDate").value || null,
         is_sprayed: document.getElementById("isSprayed").checked,
         nets_given: document.getElementById("netsGiven").checked,
         needs_followup: document.getElementById("needsFollowup").checked,
@@ -1206,13 +1340,12 @@
 
       if (editId) {
         houses = houses.map((h) => (h.record_id === editId ? houseData : h));
-        showToast("Updated " + houseData.resident_name);
       } else {
-        houses.push(houseData);
-        showToast("Saved " + houseData.resident_name + "!");
+        houses.unshift(houseData);
       }
 
-      DataStore.save(houses);
+      queueOperation({ type: "upsert", record_id: houseData.record_id, record: houseData });
+
       if (tempClickMarker) {
         map.removeLayer(tempClickMarker);
         tempClickMarker = null;
@@ -1220,6 +1353,12 @@
 
       resetFormMode();
       renderApp();
+      showToast(
+        navigator.onLine
+          ? `Saved ${houseData.resident_name} & syncing to Supabase...`
+          : `Saved ${houseData.resident_name} offline (queued for sync).`
+      );
+      syncWithSupabase(false);
 
       if (hasValidCoords(houseData)) {
         switchMobileView("map");
@@ -1230,7 +1369,7 @@
     });
 
     /* =========================================================
-       STEP 8: CSV IMPORT (3-COLUMN & MULTI-NET) + CSV EXPORT
+       STEP 8: CSV IMPORT (AUTO-MERGES SEPARATE ROWS PER NAME)
        ========================================================= */
     function parseCSV(text) {
       const cleaned = text.replace(/^\uFEFF/, "");
@@ -1244,29 +1383,19 @@
         const next = cleaned[i + 1];
 
         if (inQuotes) {
-          if (ch === '"' && next === '"') {
-            cell += '"';
-            i++;
-          } else if (ch === '"') {
-            inQuotes = false;
-          } else {
-            cell += ch;
-          }
+          if (ch === '"' && next === '"') { cell += '"'; i++; }
+          else if (ch === '"') { inQuotes = false; }
+          else { cell += ch; }
         } else {
-          if (ch === '"') {
-            inQuotes = true;
-          } else if (ch === ",") {
-            row.push(cell.trim());
-            cell = "";
-          } else if (ch === "\n" || ch === "\r") {
+          if (ch === '"') { inQuotes = true; }
+          else if (ch === ",") { row.push(cell.trim()); cell = ""; }
+          else if (ch === "\n" || ch === "\r") {
             if (ch === "\r" && next === "\n") i++;
             row.push(cell.trim());
             if (row.some((val) => val !== "")) rows.push(row);
             row = [];
             cell = "";
-          } else {
-            cell += ch;
-          }
+          } else { cell += ch; }
         }
       }
       if (cell.length > 0 || row.length > 0) {
@@ -1308,12 +1437,11 @@
         let netCountIdx = findCol(["netcount", "nets", "count", "bednets", "bilangankelambu", "kelambu"]);
         let netSizeIdx = findCol(["netsize", "size", "saizkelambu", "saiz"]);
 
-        // Also detect separate Single / Double / Family columns (for re-importing exports)
         const singleIdx = findCol(["singlenets", "netsingle", "single"]);
         const doubleIdx = findCol(["doublenets", "netdouble", "double"]);
         const familyIdx = findCol(["familynets", "netfamily", "family"]);
 
-        // Fallback for 3-column CSVs with custom header titles
+        // Default to columns 0, 1, 2 for standard 3-column CSVs
         if (nameIdx === -1 && netCountIdx === -1 && singleIdx === -1 && rows[0].length >= 3) {
           nameIdx = 0;
           netCountIdx = 1;
@@ -1334,7 +1462,7 @@
         let defaultDistrict = "Sabah";
         if (districtIdx === -1) {
           const inputVillage = prompt(
-            "Enter Village / District name for this imported list (optional):",
+            "Enter Village / District name for this imported list:",
             "Papar"
           );
           if (inputVillage && inputVillage.trim() !== "") {
@@ -1342,24 +1470,9 @@
           }
         }
 
-        // Check if the same resident name appears on multiple rows (e.g., separate rows per net size)
-        const nameCounts = {};
-        for (let i = 1; i < rows.length; i++) {
-          const nm = (nameIdx >= 0 ? rows[i][nameIdx] : "") || "";
-          const key = nm.trim().toLowerCase();
-          if (key) nameCounts[key] = (nameCounts[key] || 0) + 1;
-        }
-        const repeatedNamesCount = Object.values(nameCounts).filter((c) => c > 1).length;
-        let mergeDuplicates = false;
-        if (repeatedNamesCount > 0) {
-          mergeDuplicates = confirm(
-            `Found ${repeatedNamesCount} repeated resident name(s) in this CSV.\n` +
-            `Click OK to combine their net counts into one house record (useful if one house has multiple net sizes on separate rows).`
-          );
-        }
-
         const importedBatch = [];
         const batchByName = {};
+        let mergedRowsCount = 0;
 
         for (let i = 1; i < rows.length; i++) {
           const r = rows[i];
@@ -1368,7 +1481,6 @@
           const residentName = getVal(nameIdx);
           if (!residentName) continue;
 
-          // Read either explicit Single/Double/Family columns OR 3-column Net Count + Net Size
           let netSingle = parseInt(getVal(singleIdx), 10) || 0;
           let netDouble = parseInt(getVal(doubleIdx), 10) || 0;
           let netFamily = parseInt(getVal(familyIdx), 10) || 0;
@@ -1381,24 +1493,25 @@
             else if (sizeKey === "net_family") netFamily += countVal;
           }
 
+          // Automatically combine separate net-size rows belonging to the same resident name
           const nameKey = residentName.trim().toLowerCase();
-          if (mergeDuplicates && batchByName[nameKey]) {
-            // Merge net sizes into the existing house in this import batch
+          if (batchByName[nameKey]) {
             const existing = batchByName[nameKey];
             existing.net_single += netSingle;
             existing.net_double += netDouble;
             existing.net_family += netFamily;
             if (getTotalNets(existing) > 0) existing.nets_given = true;
+            mergedRowsCount++;
             continue;
           }
 
           const latNum = parseFloat(getVal(latIdx));
           const lngNum = parseFloat(getVal(lngIdx));
-          const sprayDateVal = getVal(sprayDateIdx) || "";
+          const sprayDateVal = getVal(sprayDateIdx) || null;
           const totalNets = netSingle + netDouble + netFamily;
 
           const newHouse = {
-            record_id: DataStore.makeId() + "_" + i,
+            record_id: makeRecordId() + "_" + i,
             house_id: getVal(idIdx) || `SBH-${String(houses.length + importedBatch.length + 1).padStart(3, "0")}`,
             resident_name: residentName,
             district: getVal(districtIdx) || defaultDistrict,
@@ -1421,11 +1534,18 @@
           batchByName[nameKey] = newHouse;
         }
 
-        houses.push(...importedBatch);
-        DataStore.save(houses);
+        // Save locally and queue every imported house for Supabase sync
+        importedBatch.forEach((h) => {
+          houses.unshift(h);
+          queueOperation({ type: "upsert", record_id: h.record_id, record: h });
+        });
+
         document.getElementById("statusFilter").value = "NEEDS_GPS";
         renderApp();
-        showToast(`Imported ${importedBatch.length} house(s)! Tap any row to add GPS.`);
+
+        const mergeNote = mergedRowsCount > 0 ? ` (merged ${mergedRowsCount} extra net-size row(s))` : "";
+        showToast(`Imported ${importedBatch.length} house(s)${mergeNote}. Syncing...`);
+        syncWithSupabase(false);
         event.target.value = "";
       };
 
@@ -1444,7 +1564,6 @@
       URL.revokeObjectURL(url);
     }
 
-    // 3-column CSV template demonstrating how repeated names combine multiple net sizes
     document.getElementById("templateBtn").addEventListener("click", () => {
       const template = [
         "Resident Name,Net Count,Net Size",
@@ -1475,7 +1594,7 @@
         h.net_family ?? 0,
         getTotalNets(h),
         h.occupant_count ?? 0,
-        esc(h.spray_date),
+        esc(h.spray_date || ""),
         h.is_sprayed ? "Yes" : "No",
         h.nets_given ? "Yes" : "No",
         h.needs_followup ? "Yes" : "No",
@@ -1491,7 +1610,7 @@
     });
 
     /* =========================================================
-       STEP 9: MAP CLICK, GPS & NAVIGATION EVENTS
+       STEP 9: MAP CLICK, GPS & MOBILE NAVIGATION EVENTS
        ========================================================= */
     map.on("click", (event) => {
       const { lat, lng } = event.latlng;
@@ -1540,7 +1659,7 @@
     document.getElementById("tabList").addEventListener("click", () => switchMobileView("list"));
 
     /* =========================================================
-       STEP 10: OFFLINE MAP TILE SAVER & SERVICE WORKER
+       STEP 10: OFFLINE MAP TILE SAVER, ONLINE MONITOR & SW
        ========================================================= */
     function latLngToTile(lat, lng, zoom) {
       const n = Math.pow(2, zoom);
@@ -1619,6 +1738,10 @@
       if (navigator.onLine) {
         badge.textContent = "Online";
         badge.classList.remove("offline");
+        // Auto-sync queued offline changes as soon as signal returns!
+        if (syncQueue.length > 0 && currentUser) {
+          syncWithSupabase(true);
+        }
       } else {
         badge.textContent = "Offline Mode";
         badge.classList.add("offline");
@@ -1636,8 +1759,10 @@
       });
     }
 
-    updateAuthUI();
+    // Start the app
+    updateSyncButton();
     renderApp();
+    initAuth();
   </script>
 </body>
 </html>
