@@ -1,6 +1,6 @@
 -- =========================================================
--- SUPABASE / POSTGRESQL SETUP: Sabah Malaria Control App
--- Run this once in Supabase Dashboard -> SQL Editor -> New Query
+-- SUPABASE / POSTGRESQL SETUP (v2): Sabah Malaria Control
+-- Includes Table Grants + Row Level Security (RLS)
 -- =========================================================
 
 -- 1. Create the shared houses table
@@ -34,10 +34,15 @@ CREATE TABLE IF NOT EXISTS public.houses (
 CREATE INDEX IF NOT EXISTS idx_houses_district ON public.houses (district);
 CREATE INDEX IF NOT EXISTS idx_houses_statuses ON public.houses (is_sprayed, nets_given, needs_followup);
 
--- 3. Enable Row Level Security (CRITICAL: blocks unauthenticated public access)
+-- 3. Door 1: Grant table-level privileges to signed-in users ONLY
+GRANT USAGE ON SCHEMA public TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.houses TO authenticated;
+REVOKE ALL ON TABLE public.houses FROM anon;
+
+-- 4. Door 2: Enable Row Level Security (RLS)
 ALTER TABLE public.houses ENABLE ROW LEVEL SECURITY;
 
--- 4. Allow ONLY signed-in ("authenticated") team members to read/write houses
+-- 5. Allow ONLY signed-in ("authenticated") team members to read/write rows
 DROP POLICY IF EXISTS "Team members can read houses" ON public.houses;
 CREATE POLICY "Team members can read houses"
   ON public.houses FOR SELECT
@@ -62,11 +67,3 @@ CREATE POLICY "Team members can delete houses"
   ON public.houses FOR DELETE
   TO authenticated
   USING (true);
-
--- =========================================================
--- FUTURE MIGRATION NOTE (Moving to On-Premise PostgreSQL):
--- Export anytime using standard PostgreSQL pg_dump:
---   pg_dump "YOUR_SUPABASE_DB_CONNECTION_STRING" -t public.houses > houses_backup.sql
--- Then import into your on-premise PostgreSQL server:
---   psql -h localhost -U postgres -d malaria_db < houses_backup.sql
--- =========================================================
