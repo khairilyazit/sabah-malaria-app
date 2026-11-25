@@ -1,8 +1,8 @@
 /* =========================================================
-   SERVICE WORKER (v5): Offline Support + Supabase Pass-Through
+   SERVICE WORKER (v7): Offline Support + Supabase Pass-Through
    ========================================================= */
 
-const APP_CACHE = "sabah-malaria-app-v5";
+const APP_CACHE = "sabah-malaria-app-v7";
 const TILE_CACHE = "sabah-malaria-tiles-v1";
 
 const APP_FILES = [
@@ -37,12 +37,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = event.request.url;
 
-  // Never intercept live Supabase API or Auth calls
   if (url.includes(".supabase.co")) {
     return;
   }
 
-  // Esri Map Tiles -> Cache first, then network
   if (url.includes("server.arcgisonline.com")) {
     event.respondWith(
       caches.open(TILE_CACHE).then(async (cache) => {
@@ -63,7 +61,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // App files -> Network first, fall back to cache when offline
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
