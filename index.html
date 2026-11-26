@@ -97,7 +97,7 @@
     }
 
     /* =========================================================
-       3. TOP HEADER BAR + CLEAN LIVE GPS BANNER
+       3. TOP HEADER BAR + LIVE GPS STATUS BANNER
        ========================================================= */
     header {
       height: var(--header-h);
@@ -161,7 +161,6 @@
       border-color: #ffffff;
     }
 
-    /* Clean Live GPS Status Banner: Accuracy (m) + Signal Quality */
     #gpsBanner {
       min-height: var(--gps-bar-h);
       background: #102a43;
@@ -223,7 +222,7 @@
     }
 
     /* =========================================================
-       4. WORKSPACE (Desktop = Side-by-Side, Mobile = Tabs)
+       4. WORKSPACE & DESKTOP SIDEBAR SWITCHER
        ========================================================= */
     .workspace {
       flex: 1;
@@ -233,7 +232,7 @@
     }
 
     #sidebar {
-      width: 400px;
+      width: 420px;
       background: var(--bg);
       border-right: 1px solid var(--border);
       overflow-y: auto;
@@ -242,6 +241,41 @@
       flex-direction: column;
       gap: 12px;
     }
+
+    /* Desktop tab bar inside sidebar so you can jump between Summary, Form, and List */
+    #desktopTabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .desk-tab-btn {
+      margin: 0;
+      padding: 7px 6px;
+      font-size: 0.8rem;
+      background: transparent;
+      color: var(--text);
+      border-radius: 6px;
+    }
+
+    .desk-tab-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    /* Desktop panel visibility controlled by data-sidebar attribute */
+    body[data-sidebar="summary"] #formPanel,
+    body[data-sidebar="summary"] #listPanel { display: none; }
+
+    body[data-sidebar="form"] #summaryPanel,
+    body[data-sidebar="form"] #listPanel { display: none; }
+
+    body[data-sidebar="list"] #summaryPanel,
+    body[data-sidebar="list"] #formPanel { display: none; }
 
     #map-container {
       flex: 1;
@@ -315,7 +349,7 @@
     }
 
     /* =========================================================
-       5. CARDS, FORMS, GPS WARNING BOX & CHECKBOXES
+       5. CARDS, FORMS & SUMMARY DASHBOARD STYLES
        ========================================================= */
     .card {
       background: #ffffff;
@@ -336,7 +370,6 @@
       color: var(--muted);
     }
 
-    /* NEW: Gentle inline warning when GPS accuracy exceeds threshold */
     .gps-warn-box {
       display: none;
       margin-top: 8px;
@@ -350,6 +383,140 @@
       line-height: 1.4;
     }
 
+    /* NEW: Summary Dashboard KPI Cards & Kampung Breakdown */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .kpi-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .kpi-box.highlight-green {
+      background: #f0fdf4;
+      border-color: #86efac;
+    }
+
+    .kpi-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1.2;
+    }
+
+    .kpi-label {
+      font-size: 0.74rem;
+      color: var(--muted);
+      margin-top: 2px;
+      font-weight: 600;
+    }
+
+    .net-totals-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 8px 6px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .net-totals-bar strong {
+      display: block;
+      font-size: 1.05rem;
+      color: #1e40af;
+    }
+
+    .net-totals-bar span {
+      font-size: 0.68rem;
+      color: #3b82f6;
+      font-weight: 600;
+    }
+
+    .kampung-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-top: 8px;
+      background: #ffffff;
+    }
+
+    .kampung-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .kampung-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--text);
+    }
+
+    .btn-view-kampung {
+      width: auto;
+      margin: 0;
+      padding: 4px 8px;
+      font-size: 0.72rem;
+      background: #e2e8f0;
+      color: var(--text);
+      border-radius: 5px;
+      font-weight: 600;
+    }
+
+    .spray-progress-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.76rem;
+      color: #0f766e;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 7px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 4px 0 8px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #0d9488;
+      border-radius: 999px;
+    }
+
+    .kampung-nets-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 6px 4px;
+      text-align: center;
+      font-size: 0.73rem;
+    }
+
+    .kampung-nets-grid strong {
+      display: block;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+
+    /* Form inputs & buttons */
     label {
       display: block;
       font-size: 0.82rem;
@@ -391,9 +558,7 @@
       gap: 8px;
     }
 
-    .two-col > div {
-      flex: 1;
-    }
+    .two-col > div { flex: 1; }
 
     .three-col {
       display: grid;
@@ -516,7 +681,7 @@
     }
 
     /* =========================================================
-       6. MOBILE BOTTOM NAVIGATION
+       6. MOBILE BOTTOM NAVIGATION (4 TABS ON PHONES)
        ========================================================= */
     #mobile-nav {
       display: none;
@@ -532,12 +697,12 @@
       border-radius: 0;
       background: transparent;
       color: var(--muted);
-      font-size: 0.8rem;
+      font-size: 0.76rem;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 6px;
+      padding: 6px 2px;
     }
 
     .nav-btn.active {
@@ -548,6 +713,7 @@
 
     @media (max-width: 768px) {
       #mobile-nav { display: flex; }
+      #desktopTabs { display: none; }
       #sidebar { width: 100%; border-right: none; }
 
       body.view-map #sidebar { display: none; }
@@ -555,17 +721,25 @@
 
       body.view-form #map-container { display: none; }
       body.view-form #sidebar { display: flex; }
-      body.view-form #listPanel { display: none; }
       body.view-form #formPanel { display: block; }
+      body.view-form #listPanel,
+      body.view-form #summaryPanel { display: none; }
 
       body.view-list #map-container { display: none; }
       body.view-list #sidebar { display: flex; }
-      body.view-list #formPanel { display: none; }
       body.view-list #listPanel { display: block; }
+      body.view-list #formPanel,
+      body.view-list #summaryPanel { display: none; }
+
+      body.view-summary #map-container { display: none; }
+      body.view-summary #sidebar { display: flex; }
+      body.view-summary #summaryPanel { display: block; }
+      body.view-summary #formPanel,
+      body.view-summary #listPanel { display: none; }
     }
   </style>
 </head>
-<body class="view-map">
+<body class="view-map" data-sidebar="summary">
 
   <!-- LOGIN OVERLAY (SUPABASE AUTH) -->
   <div id="loginOverlay">
@@ -617,7 +791,7 @@
     </div>
   </header>
 
-  <!-- CLEAN LIVE GPS STATUS BANNER (Accuracy in meters + Signal Quality) -->
+  <!-- LIVE GPS STATUS BANNER -->
   <div id="gpsBanner">
     <div class="gps-info-group">
       <span id="gpsDot" class="gps-dot"></span>
@@ -634,6 +808,60 @@
 
     <!-- SIDEBAR -->
     <aside id="sidebar">
+
+      <!-- DESKTOP SIDEBAR TAB SWITCHER -->
+      <div id="desktopTabs">
+        <button type="button" class="desk-tab-btn active" id="deskTabSummary">Summary</button>
+        <button type="button" class="desk-tab-btn" id="deskTabForm">+ Add House</button>
+        <button type="button" class="desk-tab-btn" id="deskTabList">Houses</button>
+      </div>
+
+      <!-- NEW PANEL: SUMMARY DASHBOARD (TOTALS + PER-KAMPUNG BREAKDOWN) -->
+      <section class="card" id="summaryPanel">
+        <h2>Program Summary Dashboard</h2>
+        <p class="helper-text">Live totals across all synced houses &amp; Kampungs.</p>
+
+        <!-- Overall House & Spray Totals -->
+        <div class="kpi-grid">
+          <div class="kpi-box">
+            <div class="kpi-value" id="sumTotalHouses">0</div>
+            <div class="kpi-label">Total Houses</div>
+          </div>
+          <div class="kpi-box highlight-green">
+            <div class="kpi-value" id="sumTotalSprayed">0 (0%)</div>
+            <div class="kpi-label">Sprayed Houses (IRS)</div>
+          </div>
+        </div>
+
+        <!-- Overall Bed Nets by Size -->
+        <div class="net-totals-bar">
+          <div>
+            <strong id="sumNetSingle">0</strong>
+            <span>Single</span>
+          </div>
+          <div>
+            <strong id="sumNetDouble">0</strong>
+            <span>Double</span>
+          </div>
+          <div>
+            <strong id="sumNetFamily">0</strong>
+            <span>Family</span>
+          </div>
+          <div>
+            <strong id="sumNetTotal">0</strong>
+            <span>Total Nets</span>
+          </div>
+        </div>
+
+        <button type="button" class="btn-export" id="exportSummaryBtn" style="margin-top:0; margin-bottom:8px; padding:8px; font-size:0.82rem;">
+          Export Kampung Summary CSV
+        </button>
+
+        <label for="summarySearchInput" style="margin-top:4px;">Breakdown per Kampung (<span id="kampungCount">0</span>)</label>
+        <input type="text" id="summarySearchInput" placeholder="Filter Kampung name..." />
+
+        <div id="kampungSummaryList" style="margin-top:6px;"></div>
+      </section>
 
       <!-- PANEL A: ADD / EDIT HOUSE FORM -->
       <section class="card" id="formPanel">
@@ -672,10 +900,9 @@
             Use My Current GPS Location
           </button>
 
-          <!-- NEW: Gentle inline GPS accuracy warning -->
           <div id="gpsWarnBox" class="gps-warn-box"></div>
 
-          <!-- MULTIPLE NET SIZES (Single, Double, Family only) -->
+          <!-- MULTIPLE NET SIZES -->
           <label>Bed Nets Given by Size (LLIN)</label>
           <div class="three-col">
             <div>
@@ -780,13 +1007,14 @@
 
   </div>
 
-  <!-- MOBILE BOTTOM NAVIGATION -->
+  <!-- MOBILE BOTTOM NAVIGATION (4 TABS) -->
   <nav id="mobile-nav">
     <button type="button" class="nav-btn active" id="tabMap"><span>Map</span></button>
-    <button type="button" class="nav-btn" id="tabForm"><span>+ Add House</span></button>
+    <button type="button" class="nav-btn" id="tabForm"><span>+ Add</span></button>
     <button type="button" class="nav-btn" id="tabList">
       <span>Houses (<span id="mobileHouseCount">0</span>)</span>
     </button>
+    <button type="button" class="nav-btn" id="tabSummary"><span>Summary</span></button>
   </nav>
 
   <!-- Load Leaflet 1.9.4 + Supabase JS v2 -->
@@ -802,7 +1030,10 @@
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_hbGXUby0VA9XWNa9g7I6EQ_IXTMFLzm";
     const USERNAME_EMAIL_DOMAIN = "sabah-malaria.local";
 
-    // GPS Signal & Warning Thresholds (in meters) — easy to adjust!
+    // Summary Dashboard sort order: "houses" (most houses first) or "name" (A to Z)
+    const SUMMARY_SORT_BY = "houses";
+
+    // GPS Signal & Warning Thresholds (in meters)
     const GPS_STRONG_MAX_METERS = 10;      // 10m or less = Strong (Green)
     const GPS_FAIR_MAX_METERS = 30;        // 11m to 30m  = Fair (Orange); >30m = Weak (Red)
     const GPS_WARN_THRESHOLD_METERS = 20;  // Gentle warning if pinning via GPS worse than 20m
@@ -860,7 +1091,6 @@
       return "rec_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
     }
 
-    // PostgreSQL row mapper (unchanged — no new columns needed in Supabase)
     function toSqlRow(h) {
       return {
         record_id: h.record_id,
@@ -1023,9 +1253,8 @@
        ========================================================= */
     let gpsWatchId = null;
     let gpsEnabledByUser = true;
-    let latestGps = null; // { lat, lng, accuracy, timestamp }
+    let latestGps = null;
 
-    // Tracks how the current form's coordinates were entered ("gps", "map", "manual", or null)
     let coordsSource = null;
     let capturedGpsAccuracy = null;
 
@@ -1270,7 +1499,7 @@
     });
 
     /* =========================================================
-       STEP 6: HELPER FUNCTIONS (MULTI-NETS & MULTI-STATUS)
+       STEP 6: HELPER FUNCTIONS & VIEW SWITCHERS
        ========================================================= */
     function escapeHtml(text) {
       const div = document.createElement("div");
@@ -1341,11 +1570,25 @@
       }, 3400);
     }
 
+    // Controls active sidebar panel on Desktop
+    function setDesktopSidebar(panelName) {
+      document.body.setAttribute("data-sidebar", panelName);
+      document.getElementById("deskTabSummary").classList.toggle("active", panelName === "summary");
+      document.getElementById("deskTabForm").classList.toggle("active", panelName === "form");
+      document.getElementById("deskTabList").classList.toggle("active", panelName === "list");
+    }
+
+    // Controls active full-screen tab on Mobile (and syncs Desktop sidebar when appropriate)
     function switchMobileView(viewName) {
       document.body.className = "view-" + viewName;
       document.getElementById("tabMap").classList.toggle("active", viewName === "map");
       document.getElementById("tabForm").classList.toggle("active", viewName === "form");
       document.getElementById("tabList").classList.toggle("active", viewName === "list");
+      document.getElementById("tabSummary").classList.toggle("active", viewName === "summary");
+
+      if (viewName === "form" || viewName === "list" || viewName === "summary") {
+        setDesktopSidebar(viewName);
+      }
 
       if (viewName === "map") {
         setTimeout(() => map.invalidateSize(), 150);
@@ -1353,7 +1596,163 @@
     }
 
     /* =========================================================
-       STEP 7: RENDER MAP MARKERS & HOUSE LIST
+       STEP 7: NEW SUMMARY DASHBOARD AGGREGATION & RENDERING
+       Groups houses by Kampung and totals Sprayed + Net Sizes!
+       ========================================================= */
+    function getKampungStats() {
+      let totalSprayed = 0;
+      let totalSingle = 0;
+      let totalDouble = 0;
+      let totalFamily = 0;
+
+      // Dictionary object grouping records by lowercase Kampung name
+      const kampungMap = {};
+
+      houses.forEach((h) => {
+        const cleanName = (h.district || "").trim() || "Unspecified Kampung";
+        const key = cleanName.toLowerCase();
+
+        if (!kampungMap[key]) {
+          kampungMap[key] = {
+            name: cleanName,
+            totalHouses: 0,
+            sprayedHouses: 0,
+            singleNets: 0,
+            doubleNets: 0,
+            familyNets: 0,
+            occupants: 0,
+            needsGps: 0,
+            followup: 0
+          };
+        }
+
+        const k = kampungMap[key];
+        const s = Math.max(0, parseInt(h.net_single, 10) || 0);
+        const d = Math.max(0, parseInt(h.net_double, 10) || 0);
+        const f = Math.max(0, parseInt(h.net_family, 10) || 0);
+        const occ = Math.max(0, parseInt(h.occupant_count, 10) || 0);
+
+        k.totalHouses += 1;
+        if (h.is_sprayed) {
+          k.sprayedHouses += 1;
+          totalSprayed += 1;
+        }
+        k.singleNets += s;
+        k.doubleNets += d;
+        k.familyNets += f;
+        k.occupants += occ;
+        if (!hasValidCoords(h)) k.needsGps += 1;
+        if (h.needs_followup) k.followup += 1;
+
+        totalSingle += s;
+        totalDouble += d;
+        totalFamily += f;
+      });
+
+      const kampungList = Object.values(kampungMap).sort((a, b) => {
+        if (SUMMARY_SORT_BY === "name") {
+          return a.name.localeCompare(b.name);
+        }
+        return b.totalHouses - a.totalHouses || a.name.localeCompare(b.name);
+      });
+
+      return {
+        totalHouses: houses.length,
+        totalSprayed,
+        totalSingle,
+        totalDouble,
+        totalFamily,
+        totalNets: totalSingle + totalDouble + totalFamily,
+        kampungList
+      };
+    }
+
+    // Jumps from a Kampung summary card straight to its filtered House List
+    window.filterByKampung = function (encodedName) {
+      const name = decodeURIComponent(encodedName);
+      document.getElementById("searchInput").value = name === "Unspecified Kampung" ? "" : name;
+      document.getElementById("statusFilter").value = "ALL";
+      renderApp();
+      switchMobileView("list");
+      showToast("Showing houses in " + name);
+    };
+
+    function renderSummary() {
+      const stats = getKampungStats();
+      const overallPct = stats.totalHouses > 0
+        ? Math.round((stats.totalSprayed / stats.totalHouses) * 100)
+        : 0;
+
+      // 1. Update overall program KPI numbers
+      document.getElementById("sumTotalHouses").textContent = stats.totalHouses;
+      document.getElementById("sumTotalSprayed").textContent = `${stats.totalSprayed} (${overallPct}%)`;
+      document.getElementById("sumNetSingle").textContent = stats.totalSingle;
+      document.getElementById("sumNetDouble").textContent = stats.totalDouble;
+      document.getElementById("sumNetFamily").textContent = stats.totalFamily;
+      document.getElementById("sumNetTotal").textContent = stats.totalNets;
+
+      // 2. Filter and render per-Kampung cards
+      const filterText = (document.getElementById("summarySearchInput").value || "")
+        .trim()
+        .toLowerCase();
+      const listEl = document.getElementById("kampungSummaryList");
+      listEl.innerHTML = "";
+
+      const visibleKampungs = stats.kampungList.filter((k) =>
+        k.name.toLowerCase().includes(filterText)
+      );
+
+      document.getElementById("kampungCount").textContent = visibleKampungs.length;
+
+      if (visibleKampungs.length === 0) {
+        listEl.innerHTML = `<p class="helper-text">No Kampung records match yet.</p>`;
+        return;
+      }
+
+      visibleKampungs.forEach((k) => {
+        const pct = k.totalHouses > 0
+          ? Math.round((k.sprayedHouses / k.totalHouses) * 100)
+          : 0;
+        const kampungTotalNets = k.singleNets + k.doubleNets + k.familyNets;
+        const encoded = encodeURIComponent(k.name);
+
+        const card = document.createElement("div");
+        card.className = "kampung-card";
+        card.innerHTML = `
+          <div class="kampung-header">
+            <div>
+              <div class="kampung-title">${escapeHtml(k.name)}</div>
+              <small style="color:#627d98;">
+                ${k.totalHouses} house(s) &bull; ${k.occupants} occupant(s)
+                ${k.needsGps > 0 ? ` &bull; ${k.needsGps} needs GPS` : ""}
+              </small>
+            </div>
+            <button type="button" class="btn-view-kampung" onclick="filterByKampung('${encoded}')">
+              View Houses
+            </button>
+          </div>
+
+          <div class="spray-progress-row">
+            <span>Sprayed Houses: ${k.sprayedHouses} / ${k.totalHouses}</span>
+            <span>${pct}%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:${pct}%;"></div>
+          </div>
+
+          <div class="kampung-nets-grid">
+            <div><strong>${k.singleNets}</strong>Single</div>
+            <div><strong>${k.doubleNets}</strong>Double</div>
+            <div><strong>${k.familyNets}</strong>Family</div>
+            <div><strong style="color:#1e40af;">${kampungTotalNets}</strong>Total Nets</div>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+    }
+
+    /* =========================================================
+       STEP 8: RENDER MAP MARKERS & HOUSE LIST
        ========================================================= */
     function createMarker(house) {
       const marker = L.circleMarker([house.lat, house.lng], {
@@ -1423,8 +1822,11 @@
       document.getElementById("houseCount").textContent = filtered.length;
       document.getElementById("mobileHouseCount").textContent = houses.length;
 
+      // Always keep the Summary Dashboard updated alongside the map and house list
+      renderSummary();
+
       if (filtered.length === 0) {
-        houseListEl.innerHTML = `<p class="helper-text">No houses yet. Add a house or import a CSV.</p>`;
+        houseListEl.innerHTML = `<p class="helper-text">No matching houses found.</p>`;
         return;
       }
 
@@ -1474,7 +1876,7 @@
     }
 
     /* =========================================================
-       STEP 8: ADD, EDIT & DELETE (WITH GENTLE GPS ACCURACY CHECK)
+       STEP 9: ADD, EDIT & DELETE (WITH GENTLE GPS ACCURACY CHECK)
        ========================================================= */
     document.getElementById("sprayDate").addEventListener("change", (e) => {
       if (e.target.value) document.getElementById("isSprayed").checked = true;
@@ -1490,7 +1892,6 @@
       });
     });
 
-    // If the officer edits Lat/Lng manually, clear the GPS accuracy warning
     ["lat", "lng"].forEach((fieldId) => {
       document.getElementById(fieldId).addEventListener("input", () => {
         coordsSource = "manual";
@@ -1539,7 +1940,6 @@
       document.getElementById("submitBtn").textContent = "Update House Record";
       document.getElementById("cancelEditBtn").style.display = "block";
 
-      // Reset GPS warning state when opening an existing record
       coordsSource = "existing";
       capturedGpsAccuracy = null;
       updateGpsWarningUI();
@@ -1567,7 +1967,6 @@
       const parsedLat = latRaw === "" ? null : parseFloat(latRaw);
       const parsedLng = lngRaw === "" ? null : parseFloat(lngRaw);
 
-      // Gentle pre-save warning ONLY when coordinates came from low-accuracy GPS
       if (
         Number.isFinite(parsedLat) &&
         Number.isFinite(parsedLng) &&
@@ -1635,7 +2034,7 @@
     });
 
     /* =========================================================
-       STEP 9: CSV IMPORT (AUTO-MERGES SEPARATE ROWS PER NAME)
+       STEP 10: CSV IMPORT, HOUSE EXPORT & SUMMARY CSV EXPORT
        ========================================================= */
     function parseCSV(text) {
       const cleaned = text.replace(/^\uFEFF/, "");
@@ -1872,15 +2271,46 @@
       downloadCSVFile("sabah_malaria_houses.csv", csvText);
     });
 
+    // NEW: Export the per-Kampung Summary Dashboard to CSV
+    document.getElementById("exportSummaryBtn").addEventListener("click", () => {
+      const stats = getKampungStats();
+      const headers = [
+        "Kampung / District", "Total Houses", "Sprayed Houses", "Sprayed %",
+        "Single Nets", "Double Nets", "Family Nets", "Total Nets",
+        "Total Occupants", "Needs GPS", "Follow-up Needed"
+      ];
+      const esc = (val) => `"${String(val ?? "").replace(/"/g, '""')}"`;
+
+      const rows = stats.kampungList.map((k) => {
+        const pct = k.totalHouses > 0 ? Math.round((k.sprayedHouses / k.totalHouses) * 100) : 0;
+        const totalNets = k.singleNets + k.doubleNets + k.familyNets;
+        return [
+          esc(k.name),
+          k.totalHouses,
+          k.sprayedHouses,
+          `${pct}%`,
+          k.singleNets,
+          k.doubleNets,
+          k.familyNets,
+          totalNets,
+          k.occupants,
+          k.needsGps,
+          k.followup
+        ];
+      });
+
+      const csvText = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      downloadCSVFile("sabah_kampung_summary.csv", csvText);
+    });
+
     /* =========================================================
-       STEP 10: MAP CLICK, GPS CAPTURE & MOBILE TABS
+       STEP 11: MAP CLICK, GPS CAPTURE & NAVIGATION EVENTS
        ========================================================= */
     map.on("click", (event) => {
       const { lat, lng } = event.latlng;
       document.getElementById("lat").value = lat.toFixed(5);
       document.getElementById("lng").value = lng.toFixed(5);
 
-      // Map-tapped pins do not trigger the GPS accuracy warning
       coordsSource = "map";
       capturedGpsAccuracy = null;
       updateGpsWarningUI();
@@ -1894,7 +2324,9 @@
         dashArray: "4"
       }).addTo(map);
 
-      showToast("Coordinates picked from map! Open '+ Add House' to save.");
+      // On desktop, switch sidebar to the Add House form automatically so coordinates are visible
+      setDesktopSidebar("form");
+      showToast("Coordinates picked! Open '+ Add' to save.");
     });
 
     function applyCapturedGps(lat, lng, accuracy) {
@@ -1921,7 +2353,6 @@
         return;
       }
 
-      // Reuse live banner GPS if fresher than 10 seconds
       if (latestGps && (Date.now() - latestGps.timestamp) < 10000) {
         applyCapturedGps(latestGps.lat, latestGps.lng, latestGps.accuracy);
         return;
@@ -1941,12 +2372,21 @@
 
     document.getElementById("searchInput").addEventListener("input", renderApp);
     document.getElementById("statusFilter").addEventListener("change", renderApp);
+    document.getElementById("summarySearchInput").addEventListener("input", renderSummary);
+
+    // Mobile bottom navigation tabs
     document.getElementById("tabMap").addEventListener("click", () => switchMobileView("map"));
     document.getElementById("tabForm").addEventListener("click", () => switchMobileView("form"));
     document.getElementById("tabList").addEventListener("click", () => switchMobileView("list"));
+    document.getElementById("tabSummary").addEventListener("click", () => switchMobileView("summary"));
+
+    // Desktop sidebar navigation tabs
+    document.getElementById("deskTabSummary").addEventListener("click", () => setDesktopSidebar("summary"));
+    document.getElementById("deskTabForm").addEventListener("click", () => setDesktopSidebar("form"));
+    document.getElementById("deskTabList").addEventListener("click", () => setDesktopSidebar("list"));
 
     /* =========================================================
-       STEP 11: OFFLINE MAP TILE SAVER, ONLINE MONITOR & SW
+       STEP 12: OFFLINE MAP TILE SAVER, ONLINE MONITOR & SW
        ========================================================= */
     function latLngToTile(lat, lng, zoom) {
       const n = Math.pow(2, zoom);
