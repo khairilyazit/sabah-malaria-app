@@ -1,8 +1,8 @@
 /* =========================================================
-   SERVICE WORKER (v8): Offline Support + Supabase Pass-Through
+   SERVICE WORKER (v9): Offline Support + Supabase Pass-Through
    ========================================================= */
 
-const APP_CACHE = "sabah-malaria-app-v8";
+const APP_CACHE = "sabah-malaria-app-v9";
 const TILE_CACHE = "sabah-malaria-tiles-v1";
 
 const APP_FILES = [
