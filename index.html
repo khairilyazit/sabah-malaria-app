@@ -242,7 +242,6 @@
       gap: 12px;
     }
 
-    /* Desktop tab bar inside sidebar so you can jump between Summary, Form, and List */
     #desktopTabs {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -267,7 +266,6 @@
       color: #ffffff;
     }
 
-    /* Desktop panel visibility controlled by data-sidebar attribute */
     body[data-sidebar="summary"] #formPanel,
     body[data-sidebar="summary"] #listPanel { display: none; }
 
@@ -383,7 +381,25 @@
       line-height: 1.4;
     }
 
-    /* NEW: Summary Dashboard KPI Cards & Kampung Breakdown */
+    /* NEW: Date Filter Box inside Summary Dashboard */
+    .period-filter-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .period-filter-box label {
+      margin-top: 0;
+      font-size: 0.78rem;
+    }
+
+    .period-sub-inputs {
+      margin-top: 8px;
+    }
+
+    /* Summary Dashboard KPI Cards & Kampung Breakdown */
     .kpi-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -405,17 +421,24 @@
     }
 
     .kpi-value {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 800;
       color: var(--primary);
       line-height: 1.2;
     }
 
     .kpi-label {
-      font-size: 0.74rem;
+      font-size: 0.73rem;
       color: var(--muted);
       margin-top: 2px;
       font-weight: 600;
+    }
+
+    .section-mini-label {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: #1e40af;
+      margin-bottom: 4px;
     }
 
     .net-totals-bar {
@@ -816,24 +839,55 @@
         <button type="button" class="desk-tab-btn" id="deskTabList">Houses</button>
       </div>
 
-      <!-- NEW PANEL: SUMMARY DASHBOARD (TOTALS + PER-KAMPUNG BREAKDOWN) -->
+      <!-- PANEL 1: SUMMARY DASHBOARD (WITH DATE FILTERING) -->
       <section class="card" id="summaryPanel">
         <h2>Program Summary Dashboard</h2>
-        <p class="helper-text">Live totals across all synced houses &amp; Kampungs.</p>
+        <p class="helper-text">Filter totals all-time, by spray month, or by date range.</p>
+
+        <!-- NEW: Date / Month Filter Controls -->
+        <div class="period-filter-box">
+          <label for="summaryPeriodMode">Report Period</label>
+          <select id="summaryPeriodMode">
+            <option value="ALL">All-Time Program Totals</option>
+            <option value="MONTH">By Spray Month</option>
+            <option value="RANGE">Custom Spray Date Range</option>
+          </select>
+
+          <!-- Shown when "By Spray Month" is selected -->
+          <div id="summaryMonthWrap" class="period-sub-inputs" style="display:none;">
+            <label for="summaryMonth" style="margin-top:6px;">Spray Month</label>
+            <input type="month" id="summaryMonth" />
+          </div>
+
+          <!-- Shown when "Custom Spray Date Range" is selected -->
+          <div id="summaryRangeWrap" class="period-sub-inputs" style="display:none;">
+            <div class="two-col">
+              <div>
+                <label for="summaryStartDate" style="margin-top:6px;">From Date</label>
+                <input type="date" id="summaryStartDate" />
+              </div>
+              <div>
+                <label for="summaryEndDate" style="margin-top:6px;">To Date</label>
+                <input type="date" id="summaryEndDate" />
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- Overall House & Spray Totals -->
         <div class="kpi-grid">
           <div class="kpi-box">
             <div class="kpi-value" id="sumTotalHouses">0</div>
-            <div class="kpi-label">Total Houses</div>
+            <div class="kpi-label" id="labelTotalHouses">Total Tracked Houses</div>
           </div>
           <div class="kpi-box highlight-green">
             <div class="kpi-value" id="sumTotalSprayed">0 (0%)</div>
-            <div class="kpi-label">Sprayed Houses (IRS)</div>
+            <div class="kpi-label" id="labelTotalSprayed">Sprayed Houses (IRS)</div>
           </div>
         </div>
 
         <!-- Overall Bed Nets by Size -->
+        <div class="section-mini-label" id="netsBarLabel">All-Time Bed Nets Given</div>
         <div class="net-totals-bar">
           <div>
             <strong id="sumNetSingle">0</strong>
@@ -863,7 +917,7 @@
         <div id="kampungSummaryList" style="margin-top:6px;"></div>
       </section>
 
-      <!-- PANEL A: ADD / EDIT HOUSE FORM -->
+      <!-- PANEL 2: ADD / EDIT HOUSE FORM (WITH KAMPUNG AUTOCOMPLETE) -->
       <section class="card" id="formPanel">
         <h2 id="formTitle">Add / Pin a House</h2>
         <p class="helper-text">Works offline! Changes sync to PostgreSQL when online.</p>
@@ -882,8 +936,17 @@
             </div>
           </div>
 
+          <!-- NEW: Connected to <datalist id="kampungOptions"> for consistent Kampung names -->
           <label for="district">District / Village (Kampung)</label>
-          <input type="text" id="district" placeholder="e.g., Kg. Limbahau, Papar" required />
+          <input
+            type="text"
+            id="district"
+            list="kampungOptions"
+            autocomplete="off"
+            placeholder="Pick existing or type new Kampung..."
+            required
+          />
+          <datalist id="kampungOptions"></datalist>
 
           <div class="two-col">
             <div>
@@ -960,7 +1023,7 @@
         </form>
       </section>
 
-      <!-- PANEL B: SEARCH, CSV IMPORT/EXPORT & HOUSE LIST -->
+      <!-- PANEL 3: SEARCH, CSV IMPORT/EXPORT & HOUSE LIST -->
       <section class="card" id="listPanel">
         <h2>Tracked Houses (<span id="houseCount">0</span>)</h2>
 
@@ -1030,7 +1093,15 @@
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_hbGXUby0VA9XWNa9g7I6EQ_IXTMFLzm";
     const USERNAME_EMAIL_DOMAIN = "sabah-malaria.local";
 
-    // Summary Dashboard sort order: "houses" (most houses first) or "name" (A to Z)
+    // Optional starter Kampungs shown in the autocomplete dropdown even before houses are added.
+    // Feel free to add or edit your team's common Sabah Kampungs here!
+    const DEFAULT_KAMPUNGS = [
+      "Kg. Limbahau, Papar",
+      "Kg. Benoni, Papar",
+      "Kg. Beringgis, Papar"
+    ];
+
+    // Summary Dashboard sort order: "houses" (most active first) or "name" (A to Z)
     const SUMMARY_SORT_BY = "houses";
 
     // GPS Signal & Warning Thresholds (in meters)
@@ -1063,6 +1134,11 @@
     const sbClient = isSupabaseConfigured && window.supabase
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
       : null;
+
+    // Pre-fill the month picker to the current year and month (e.g., "2026-11")
+    const now = new Date();
+    const defaultMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    document.getElementById("summaryMonth").value = defaultMonthStr;
 
     /* =========================================================
        STEP 2: LOCAL CACHE & OFFLINE SYNC QUEUE
@@ -1499,12 +1575,47 @@
     });
 
     /* =========================================================
-       STEP 6: HELPER FUNCTIONS & VIEW SWITCHERS
+       STEP 6: KAMPUNG AUTOCOMPLETE & HELPER FUNCTIONS
        ========================================================= */
     function escapeHtml(text) {
       const div = document.createElement("div");
       div.textContent = text ?? "";
       return div.innerHTML;
+    }
+
+    // Builds a deduplicated dictionary of known Kampung names (case-insensitive)
+    function getKnownKampungMap() {
+      const known = {};
+      DEFAULT_KAMPUNGS.forEach((name) => {
+        const clean = name.trim().replace(/\s+/g, " ");
+        if (clean) known[clean.toLowerCase()] = clean;
+      });
+      houses.forEach((h) => {
+        const clean = (h.district || "").trim().replace(/\s+/g, " ");
+        if (clean && !known[clean.toLowerCase()]) {
+          known[clean.toLowerCase()] = clean;
+        }
+      });
+      return known;
+    }
+
+    // Keeps Kampung names consistent (reuses existing casing if a match exists)
+    function normalizeKampungName(rawInput) {
+      const cleaned = String(rawInput || "").trim().replace(/\s+/g, " ");
+      if (!cleaned) return "Sabah";
+      const known = getKnownKampungMap();
+      return known[cleaned.toLowerCase()] || cleaned;
+    }
+
+    // Populates <datalist id="kampungOptions"> in the Add/Edit House form
+    function updateKampungAutocomplete() {
+      const datalist = document.getElementById("kampungOptions");
+      const sortedNames = Object.values(getKnownKampungMap()).sort((a, b) =>
+        a.localeCompare(b)
+      );
+      datalist.innerHTML = sortedNames
+        .map((name) => `<option value="${escapeHtml(name)}"></option>`)
+        .join("");
     }
 
     function hasValidCoords(house) {
@@ -1570,7 +1681,6 @@
       }, 3400);
     }
 
-    // Controls active sidebar panel on Desktop
     function setDesktopSidebar(panelName) {
       document.body.setAttribute("data-sidebar", panelName);
       document.getElementById("deskTabSummary").classList.toggle("active", panelName === "summary");
@@ -1578,7 +1688,6 @@
       document.getElementById("deskTabList").classList.toggle("active", panelName === "list");
     }
 
-    // Controls active full-screen tab on Mobile (and syncs Desktop sidebar when appropriate)
     function switchMobileView(viewName) {
       document.body.className = "view-" + viewName;
       document.getElementById("tabMap").classList.toggle("active", viewName === "map");
@@ -1596,16 +1705,56 @@
     }
 
     /* =========================================================
-       STEP 7: NEW SUMMARY DASHBOARD AGGREGATION & RENDERING
-       Groups houses by Kampung and totals Sprayed + Net Sizes!
+       STEP 7: SUMMARY DASHBOARD WITH DATE FILTERING
+       Supports All-Time, By Spray Month, and Custom Date Range
        ========================================================= */
+    function getSummaryFilterConfig() {
+      const mode = document.getElementById("summaryPeriodMode").value;
+      const monthVal = document.getElementById("summaryMonth").value;
+      const startVal = document.getElementById("summaryStartDate").value;
+      const endVal = document.getElementById("summaryEndDate").value;
+
+      let periodLabel = "All-Time";
+      if (mode === "MONTH") {
+        periodLabel = monthVal ? `Spray Month: ${monthVal}` : "Spray Month: (None Selected)";
+      } else if (mode === "RANGE") {
+        periodLabel = `Spray Range: ${startVal || "Start"} to ${endVal || "End"}`;
+      }
+
+      return { mode, monthVal, startVal, endVal, periodLabel };
+    }
+
+    // Checks if a house's spray_date falls inside the selected month or custom range
+    function matchesSummaryPeriod(house, cfg) {
+      if (cfg.mode === "ALL") return true;
+
+      // Date-filtered modes look at sprayed houses with a recorded spray_date (YYYY-MM-DD)
+      if (!house.is_sprayed || !house.spray_date) return false;
+      const d = house.spray_date.trim();
+
+      if (cfg.mode === "MONTH") {
+        if (!cfg.monthVal) return true;
+        return d.startsWith(cfg.monthVal);
+      }
+
+      if (cfg.mode === "RANGE") {
+        if (cfg.startVal && d < cfg.startVal) return false;
+        if (cfg.endVal && d > cfg.endVal) return false;
+        return true;
+      }
+
+      return true;
+    }
+
     function getKampungStats() {
+      const cfg = getSummaryFilterConfig();
+      const isDateFiltered = cfg.mode !== "ALL";
+
       let totalSprayed = 0;
       let totalSingle = 0;
       let totalDouble = 0;
       let totalFamily = 0;
 
-      // Dictionary object grouping records by lowercase Kampung name
       const kampungMap = {};
 
       houses.forEach((h) => {
@@ -1615,7 +1764,8 @@
         if (!kampungMap[key]) {
           kampungMap[key] = {
             name: cleanName,
-            totalHouses: 0,
+            registeredHouses: 0, // Total houses registered in this Kampung overall
+            matchedHouses: 0,    // Houses matching the selected date filter
             sprayedHouses: 0,
             singleNets: 0,
             doubleNets: 0,
@@ -1627,12 +1777,16 @@
         }
 
         const k = kampungMap[key];
+        k.registeredHouses += 1;
+
+        if (!matchesSummaryPeriod(h, cfg)) return;
+
         const s = Math.max(0, parseInt(h.net_single, 10) || 0);
         const d = Math.max(0, parseInt(h.net_double, 10) || 0);
         const f = Math.max(0, parseInt(h.net_family, 10) || 0);
         const occ = Math.max(0, parseInt(h.occupant_count, 10) || 0);
 
-        k.totalHouses += 1;
+        k.matchedHouses += 1;
         if (h.is_sprayed) {
           k.sprayedHouses += 1;
           totalSprayed += 1;
@@ -1649,15 +1803,23 @@
         totalFamily += f;
       });
 
-      const kampungList = Object.values(kampungMap).sort((a, b) => {
+      // When filtering by date, hide Kampungs that had zero activity in that period
+      let kampungList = Object.values(kampungMap);
+      if (isDateFiltered) {
+        kampungList = kampungList.filter((k) => k.matchedHouses > 0);
+      }
+
+      kampungList.sort((a, b) => {
         if (SUMMARY_SORT_BY === "name") {
           return a.name.localeCompare(b.name);
         }
-        return b.totalHouses - a.totalHouses || a.name.localeCompare(b.name);
+        return b.matchedHouses - a.matchedHouses || a.name.localeCompare(b.name);
       });
 
       return {
-        totalHouses: houses.length,
+        cfg,
+        isDateFiltered,
+        totalRegisteredHouses: houses.length,
         totalSprayed,
         totalSingle,
         totalDouble,
@@ -1667,7 +1829,6 @@
       };
     }
 
-    // Jumps from a Kampung summary card straight to its filtered House List
     window.filterByKampung = function (encodedName) {
       const name = decodeURIComponent(encodedName);
       document.getElementById("searchInput").value = name === "Unspecified Kampung" ? "" : name;
@@ -1679,19 +1840,27 @@
 
     function renderSummary() {
       const stats = getKampungStats();
-      const overallPct = stats.totalHouses > 0
-        ? Math.round((stats.totalSprayed / stats.totalHouses) * 100)
+      const overallPct = stats.totalRegisteredHouses > 0
+        ? Math.round((stats.totalSprayed / stats.totalRegisteredHouses) * 100)
         : 0;
 
-      // 1. Update overall program KPI numbers
-      document.getElementById("sumTotalHouses").textContent = stats.totalHouses;
+      // Update labels dynamically based on All-Time vs Date-Filtered mode
+      document.getElementById("sumTotalHouses").textContent = stats.totalRegisteredHouses;
       document.getElementById("sumTotalSprayed").textContent = `${stats.totalSprayed} (${overallPct}%)`;
+
+      if (stats.isDateFiltered) {
+        document.getElementById("labelTotalSprayed").textContent = "Sprayed in Selected Period";
+        document.getElementById("netsBarLabel").textContent = "Nets at Houses Sprayed in Period";
+      } else {
+        document.getElementById("labelTotalSprayed").textContent = "Sprayed Houses (All-Time)";
+        document.getElementById("netsBarLabel").textContent = "All-Time Bed Nets Given";
+      }
+
       document.getElementById("sumNetSingle").textContent = stats.totalSingle;
       document.getElementById("sumNetDouble").textContent = stats.totalDouble;
       document.getElementById("sumNetFamily").textContent = stats.totalFamily;
       document.getElementById("sumNetTotal").textContent = stats.totalNets;
 
-      // 2. Filter and render per-Kampung cards
       const filterText = (document.getElementById("summarySearchInput").value || "")
         .trim()
         .toLowerCase();
@@ -1705,16 +1874,21 @@
       document.getElementById("kampungCount").textContent = visibleKampungs.length;
 
       if (visibleKampungs.length === 0) {
-        listEl.innerHTML = `<p class="helper-text">No Kampung records match yet.</p>`;
+        listEl.innerHTML = stats.isDateFiltered
+          ? `<p class="helper-text">No houses sprayed in this selected period.</p>`
+          : `<p class="helper-text">No Kampung records match yet.</p>`;
         return;
       }
 
       visibleKampungs.forEach((k) => {
-        const pct = k.totalHouses > 0
-          ? Math.round((k.sprayedHouses / k.totalHouses) * 100)
+        const pct = k.registeredHouses > 0
+          ? Math.round((k.sprayedHouses / k.registeredHouses) * 100)
           : 0;
         const kampungTotalNets = k.singleNets + k.doubleNets + k.familyNets;
         const encoded = encodeURIComponent(k.name);
+        const sprayLabel = stats.isDateFiltered
+          ? `Sprayed in Period: ${k.sprayedHouses} / ${k.registeredHouses} houses`
+          : `Sprayed Houses: ${k.sprayedHouses} / ${k.registeredHouses}`;
 
         const card = document.createElement("div");
         card.className = "kampung-card";
@@ -1723,7 +1897,7 @@
             <div>
               <div class="kampung-title">${escapeHtml(k.name)}</div>
               <small style="color:#627d98;">
-                ${k.totalHouses} house(s) &bull; ${k.occupants} occupant(s)
+                ${k.registeredHouses} registered &bull; ${k.occupants} occupant(s)
                 ${k.needsGps > 0 ? ` &bull; ${k.needsGps} needs GPS` : ""}
               </small>
             </div>
@@ -1733,7 +1907,7 @@
           </div>
 
           <div class="spray-progress-row">
-            <span>Sprayed Houses: ${k.sprayedHouses} / ${k.totalHouses}</span>
+            <span>${sprayLabel}</span>
             <span>${pct}%</span>
           </div>
           <div class="progress-track">
@@ -1750,6 +1924,18 @@
         listEl.appendChild(card);
       });
     }
+
+    // Show/hide Month vs Range date pickers when Report Period dropdown changes
+    document.getElementById("summaryPeriodMode").addEventListener("change", (e) => {
+      const mode = e.target.value;
+      document.getElementById("summaryMonthWrap").style.display = mode === "MONTH" ? "block" : "none";
+      document.getElementById("summaryRangeWrap").style.display = mode === "RANGE" ? "block" : "none";
+      renderSummary();
+    });
+
+    ["summaryMonth", "summaryStartDate", "summaryEndDate"].forEach((id) => {
+      document.getElementById(id).addEventListener("change", renderSummary);
+    });
 
     /* =========================================================
        STEP 8: RENDER MAP MARKERS & HOUSE LIST
@@ -1802,6 +1988,10 @@
       markerLayer.clearLayers();
       houseListEl.innerHTML = "";
 
+      // Keep Kampung autocomplete options and Summary Dashboard in sync
+      updateKampungAutocomplete();
+      renderSummary();
+
       const filtered = houses.filter((h) => {
         const matchesText =
           (h.house_id || "").toLowerCase().includes(searchText) ||
@@ -1821,9 +2011,6 @@
 
       document.getElementById("houseCount").textContent = filtered.length;
       document.getElementById("mobileHouseCount").textContent = houses.length;
-
-      // Always keep the Summary Dashboard updated alongside the map and house list
-      renderSummary();
 
       if (filtered.length === 0) {
         houseListEl.innerHTML = `<p class="helper-text">No matching houses found.</p>`;
@@ -1876,7 +2063,7 @@
     }
 
     /* =========================================================
-       STEP 9: ADD, EDIT & DELETE (WITH GENTLE GPS ACCURACY CHECK)
+       STEP 9: ADD, EDIT & DELETE (NORMALIZES KAMPUNG NAMES)
        ========================================================= */
     document.getElementById("sprayDate").addEventListener("change", (e) => {
       if (e.target.value) document.getElementById("isSprayed").checked = true;
@@ -1983,11 +2170,14 @@
         if (!saveAnyway) return;
       }
 
+      // Normalize Kampung name to match existing capitalization and trim extra spaces
+      const cleanDistrict = normalizeKampungName(document.getElementById("district").value);
+
       const houseData = {
         record_id: editId || makeRecordId(),
         house_id: document.getElementById("houseId").value.trim(),
         resident_name: document.getElementById("residentName").value.trim(),
-        district: document.getElementById("district").value.trim(),
+        district: cleanDistrict,
         lat: Number.isFinite(parsedLat) ? parsedLat : null,
         lng: Number.isFinite(parsedLng) ? parsedLng : null,
         net_single: Math.max(0, parseInt(document.getElementById("netSingle").value, 10) || 0),
@@ -2127,10 +2317,10 @@
         if (districtIdx === -1) {
           const inputVillage = prompt(
             "Enter Village / District name for this imported list:",
-            "Papar"
+            DEFAULT_KAMPUNGS[0] || "Papar"
           );
           if (inputVillage && inputVillage.trim() !== "") {
-            defaultDistrict = inputVillage.trim();
+            defaultDistrict = normalizeKampungName(inputVillage);
           }
         }
 
@@ -2172,12 +2362,13 @@
           const lngNum = parseFloat(getVal(lngIdx));
           const sprayDateVal = getVal(sprayDateIdx) || null;
           const totalNets = netSingle + netDouble + netFamily;
+          const rowDistrictRaw = getVal(districtIdx);
 
           const newHouse = {
             record_id: makeRecordId() + "_" + i,
             house_id: getVal(idIdx) || `SBH-${String(houses.length + importedBatch.length + 1).padStart(3, "0")}`,
             resident_name: residentName,
-            district: getVal(districtIdx) || defaultDistrict,
+            district: rowDistrictRaw ? normalizeKampungName(rowDistrictRaw) : defaultDistrict,
             lat: Number.isFinite(latNum) ? latNum : null,
             lng: Number.isFinite(lngNum) ? lngNum : null,
             net_single: netSingle,
@@ -2271,22 +2462,26 @@
       downloadCSVFile("sabah_malaria_houses.csv", csvText);
     });
 
-    // NEW: Export the per-Kampung Summary Dashboard to CSV
+    // Exports the Kampung Summary CSV including the active Report Period
     document.getElementById("exportSummaryBtn").addEventListener("click", () => {
       const stats = getKampungStats();
       const headers = [
-        "Kampung / District", "Total Houses", "Sprayed Houses", "Sprayed %",
+        "Report Period", "Kampung / District", "Registered Houses",
+        "Sprayed Houses", "Sprayed %",
         "Single Nets", "Double Nets", "Family Nets", "Total Nets",
-        "Total Occupants", "Needs GPS", "Follow-up Needed"
+        "Occupants", "Needs GPS", "Follow-up Needed"
       ];
       const esc = (val) => `"${String(val ?? "").replace(/"/g, '""')}"`;
 
       const rows = stats.kampungList.map((k) => {
-        const pct = k.totalHouses > 0 ? Math.round((k.sprayedHouses / k.totalHouses) * 100) : 0;
+        const pct = k.registeredHouses > 0
+          ? Math.round((k.sprayedHouses / k.registeredHouses) * 100)
+          : 0;
         const totalNets = k.singleNets + k.doubleNets + k.familyNets;
         return [
+          esc(stats.cfg.periodLabel),
           esc(k.name),
-          k.totalHouses,
+          k.registeredHouses,
           k.sprayedHouses,
           `${pct}%`,
           k.singleNets,
@@ -2324,7 +2519,6 @@
         dashArray: "4"
       }).addTo(map);
 
-      // On desktop, switch sidebar to the Add House form automatically so coordinates are visible
       setDesktopSidebar("form");
       showToast("Coordinates picked! Open '+ Add' to save.");
     });
